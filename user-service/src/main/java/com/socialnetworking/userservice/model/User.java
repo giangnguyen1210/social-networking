@@ -21,18 +21,11 @@ public class User {
     private String username;
     private String email;
     private String password;
-    private String avatarUrl;
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "avatar_id", referencedColumnName = "id")
+    private Avatar avatarUrl;
     // Người dùng đang theo dõi
-    @ManyToMany
-    @JoinTable(
-            name = "followers",
-            joinColumns = @JoinColumn(name = "follower_id"),
-            inverseJoinColumns = @JoinColumn(name = "following_id"))
-    private Set<User> following = new HashSet<>();
 
-    // Người theo dõi người dùng này
-    @ManyToMany(mappedBy = "following")
-    private Set<User> followers = new HashSet<>();
 
     @Column(columnDefinition = "TEXT")
     private String bio;

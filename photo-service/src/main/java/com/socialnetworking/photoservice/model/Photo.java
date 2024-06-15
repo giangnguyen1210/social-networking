@@ -1,23 +1,23 @@
 package com.socialnetworking.photoservice.model;
 
+import com.socialnetworking.photoservice.model.base.AuditModel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.bson.types.Binary;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document(collection = "photos")
+import javax.persistence.*;
+
 @Setter @Getter @NoArgsConstructor
-public class Photo {
+@Entity
+@Table(name="photos")
+public class Photo extends AuditModel {
     @Id
-    private String id;
-
-    private String title;
-
-    private Binary image;
-
-    public Photo(String title) {
-        this.title = title;
-    }
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private Long userId;
+    private Long postId;
+    private String name;
+    private String type;
+    private String imageUrl;
+    private Boolean isDeleted;
 }

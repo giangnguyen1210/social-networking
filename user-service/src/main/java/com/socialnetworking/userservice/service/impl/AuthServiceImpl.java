@@ -1,9 +1,10 @@
 package com.socialnetworking.userservice.service.impl;
-
+import com.socialnetworking.shared_service.dto.response.BaseResponse;
+import com.socialnetworking.userservice.config.JwtService;
 import com.socialnetworking.userservice.dto.request.LoginRequest;
 import com.socialnetworking.userservice.dto.request.OTPVerificationRequest;
+import com.socialnetworking.userservice.dto.request.RegisterRequest;
 import com.socialnetworking.userservice.dto.response.AuthResponse;
-import com.socialnetworking.userservice.dto.response.BaseResponse;
 import com.socialnetworking.userservice.model.OTP;
 import com.socialnetworking.userservice.model.Role;
 import com.socialnetworking.userservice.model.User;
@@ -12,7 +13,6 @@ import com.socialnetworking.userservice.repository.OTPRepository;
 import com.socialnetworking.userservice.repository.RoleRepository;
 import com.socialnetworking.userservice.repository.UserRepository;
 import com.socialnetworking.userservice.repository.UserStatusRepository;
-import com.socialnetworking.userservice.security.JwtGenerator;
 import com.socialnetworking.userservice.service.AuthService;
 import com.socialnetworking.userservice.support.SupportService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,14 +38,6 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private OTPRepository otpRepository;
-
-    @Autowired
-    private UserStatusRepository userStatusRepository;
-
-    @Autowired
-    private RoleRepository roleRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -54,12 +46,19 @@ public class AuthServiceImpl implements AuthService {
     private AuthenticationManager authenticationManager;
 
     @Autowired
-    private JwtGenerator jwtGenerator;
+    private JwtService jwtGenerator;
 
     @Autowired
     private SupportService supportService;
     @Autowired
     private JavaMailSender emailSender;
+
+    @Autowired
+    private UserStatusRepository userStatusRepository;
+    @Autowired
+    private RoleRepository roleRepository;
+    @Autowired
+    private OTPRepository otpRepository;
     private static final String SECRET_KEY = "sign-in"; // Thay thế bằng khoá bí mật thực tế của bạn
     @Override
     public AuthResponse login(LoginRequest request) {
@@ -74,7 +73,7 @@ public class AuthServiceImpl implements AuthService {
             authResponse.setErrorDesc("Mật khẩu không được rỗng");
             return authResponse;
         }
-        User user = userRepository.findByUsername(request.getUsername());
+        User user = userRepository.findUserByUsername(request.getUsername());
         System.out.println(user);
 
         if(user==null){
@@ -91,7 +90,7 @@ public class AuthServiceImpl implements AuthService {
                 }else {
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                     authResponse.setErrorCode(HttpStatus.OK.name());
-                    String token = jwtGenerator.generateToken(authentication);
+                    String token = jwtGenerator.generateToken(request.getUsername());
                     authResponse.setAccessToken(token);
                     authResponse.setTokenType("Bearer "+token);
                 }
@@ -105,9 +104,14 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public BaseResponse register(User request) {
+    public String generateToken(String username) {
+        return jwtGenerator.generateToken(username);
+    }
+    @Override
+    public BaseResponse register(RegisterRequest request) {
+        User user = new User();
         BaseResponse baseResponse = new BaseResponse();
-        User accountUsername = userRepository.findByUsername(request.getUsername());
+        User accountUsername = userRepository.findUserByUsername(request.getUsername());
         User accountEmail = userRepository.findByEmail(request.getEmail());
         UserStatus inactiveStatus = userStatusRepository.findById(3L).orElse(null);
         Role roleUser = roleRepository.findById(2L).orElse(null);
@@ -144,20 +148,25 @@ public class AuthServiceImpl implements AuthService {
             }
             String pad = supportService.padLeft(String.valueOf(getNextId), 4, "0");
             request.setUserId((id+pad).trim());
+            user.setUserId((id+pad).trim());
+            user.setUsername(request.getUsername());
             Date date = new Date();
-            request.setCreatedDate(date);
-            request.setStatus(inactiveStatus);
-            request.setRole(roleUser);
+            user.setCreatedDate(date);
+            user.setStatus(inactiveStatus);
+            user.setRole(roleUser);
+            user.setName(request.getName());
+            user.setBirthday(request.getBirthday());
             String hashedPassword = passwordEncoder.encode(request.getPassword());
-            request.setPassword(hashedPassword);
-            userRepository.save(request);
+            user.setPassword(hashedPassword);
+            user.setEmail(request.getEmail());
+            userRepository.save(user);
             baseResponse.setData(request);
             baseResponse.setErrorCode(HttpStatus.OK.name());
         }
         return baseResponse;
     }
     @Override
-    public BaseResponse sendEmailOTP(User request) throws NoSuchAlgorithmException {
+    public BaseResponse sendEmailOTP(RegisterRequest request) throws NoSuchAlgorithmException {
         BaseResponse baseResponse = new BaseResponse();
         // check email exist:
         User checkEmailExist = userRepository.findByEmail(request.getEmail());

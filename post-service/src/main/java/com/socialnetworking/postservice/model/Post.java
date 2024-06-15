@@ -1,30 +1,28 @@
 package com.socialnetworking.postservice.model;
 
+import com.socialnetworking.postservice.model.base.AuditModel;
 import lombok.Data;
 
 import javax.persistence.*;
-import java.util.Date;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "post")
+@Table(name = "posts")
 @Data
-public class Post {
+public class Post extends AuditModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String title;
-    @Column(name = "user_id", nullable = false)
     private Long userId;
-    @Column(name = "image_id", nullable = false)
-    private Long imageId;
-    @ElementCollection
-    private List<String> photoUrls;
-    @Column(name = "created_at")
-    private Date createdAt;
+    private Boolean hasPhoto;
+    private Boolean isPublish;
+    private Boolean isDraft;
+    private Boolean isDeleted;
+    @OneToMany(mappedBy = "postId", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Photo> photos = new ArrayList<>();
 
-    @Column(name = "updated_at")
-    private Date updatedAt;
 
 
     // Constructors, Getters, Setters

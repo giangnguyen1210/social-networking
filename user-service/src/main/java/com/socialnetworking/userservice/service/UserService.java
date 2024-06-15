@@ -1,13 +1,17 @@
 package com.socialnetworking.userservice.service;
 
 
+import com.socialnetworking.shared_service.dto.response.BaseResponse;
+import com.socialnetworking.userservice.dto.request.UserEditAvatar;
 import com.socialnetworking.userservice.dto.request.UserEditRequest;
-import com.socialnetworking.userservice.dto.response.BaseResponse;
+import com.socialnetworking.userservice.model.User;
 
 public interface UserService {
-    BaseResponse update(UserEditRequest request);
+    BaseResponse updateInfo(UserEditRequest request);
+    BaseResponse updateAvatar(UserEditAvatar request);
 
-    BaseResponse getInfo(String username);
+    BaseResponse getInfo(User user);
+    BaseResponse getAvatar(User user);
 
 
 }

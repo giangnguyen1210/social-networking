@@ -1,10 +1,11 @@
 package com.socialnetworking.userservice.dto.response;
 
 
+import com.socialnetworking.shared_service.dto.response.BaseResponse;
 import lombok.Data;
 
 @Data
-public class AuthResponse extends BaseResponse{
+public class AuthResponse extends BaseResponse {
     private String accessToken;
 
     public AuthResponse(String accessToken) {

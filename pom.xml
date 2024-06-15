@@ -10,6 +10,18 @@
 		<module>post-service</module>
 		<module>photo-service</module>
 		<module>user-service</module>
+		<module>api-gateway</module>
+		<module>eureka-server</module>
+		<module>shared-service</module>
+		<module>interaction-service</module>
+		<module>follower-service</module>
 	</modules>
-
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
 </project>

@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres
+    container_name: postgres-photo-service
+    environment:
+      - POSTGRES_USER=giang
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=photo-service
+    ports:
+      - 5432:5432
+  mysql-post-service:
+    image: mysql
+    container_name: mysql-post-service
+    restart: always
+    ports:
+      - "3308:3306"
+    environment:
+      MYSQL_USER: giang
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: post_service
+    volumes:
+      - mysql-photo-service-data:/var/lib/mysql
+
+  mysql-user-service:
+    image: mysql
+    container_name: mysql-user-service
+    restart: always
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_USER: giang
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: user-service
+    volumes:
+      - mysql-user-service-data:/var/lib/mysql
+
+volumes:
+  photo-service: {}
+  mysql-photo-service-data: {}
+  mysql-user-service-data: {}
+
+networks:
+  default:
+    driver: bridge
