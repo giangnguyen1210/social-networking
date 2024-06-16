@@ -53,7 +53,7 @@ public class RabbitMQConfig {
     }
     @Bean
     public Binding postUpdateBinding(Queue queue, TopicExchange exchange) {
-        return BindingBuilder.bind(queue).to(exchange).with(postUpdateRoutingKey);
+        return BindingBuilder.bind(postUpdateQueue()).to(postUpdateExchange()).with(postUpdateRoutingKey);
     }
     @Bean
     public RabbitTemplate rabbitTemplate(final ConnectionFactory connectionFactory) {

@@ -5,6 +5,7 @@ import com.socialnetworking.shared_service.dto.response.BaseResponse;
 import com.socialnetworking.shared_service.dto.response.FileData;
 import com.socialnetworking.userservice.dto.request.UserEditAvatar;
 import com.socialnetworking.userservice.dto.request.UserEditRequest;
+import com.socialnetworking.userservice.dto.request.UserRequest;
 import com.socialnetworking.userservice.model.Avatar;
 import com.socialnetworking.userservice.model.Gender;
 import com.socialnetworking.userservice.model.User;
@@ -178,7 +179,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public BaseResponse getInfo(User user) {
+    public BaseResponse getInfo(UserRequest user) {
         BaseResponse baseResponse = new BaseResponse();
         if(user.getUserId()==null && user.getUsername()==null){
             baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
@@ -192,10 +193,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public BaseResponse getAvatar(User user) {
+    public BaseResponse getAvatar(UserRequest userRequest) {
         BaseResponse baseResponse = new BaseResponse();
         AvatarResponse avatarResponse = new AvatarResponse();
-        Long userId = user.getId();
+        Long userId = userRequest.getId();
         if(userId==null){
             baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
             return baseResponse;

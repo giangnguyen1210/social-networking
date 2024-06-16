@@ -12,11 +12,15 @@ public interface PostService {
     BaseResponse createPostSaveDraft(PostRequest postRequest);
 
     BaseResponse updatePost(PostRequest request);
+    BaseResponse updatePostSaveDraft(PostRequest request);
 
     BaseResponse getPostByPostId(Long id);
 
+    BaseResponse getPostsByUserId(Long userId);
+
     BaseResponse getPostSaveDraftByUserId(Long id);
 
-    BaseResponse deleteSaveDraft(PostDeleteRequest userId);
+    BaseResponse deleteSaveDraft(PostRequest userId);
+
     BaseResponse deletePost(PostDeleteRequest postId);
 }

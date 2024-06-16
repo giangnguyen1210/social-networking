@@ -4,6 +4,7 @@ import com.socialnetworking.shared_service.dto.response.BaseResponse;
 import com.socialnetworking.shared_service.util.FileUtil;
 import com.socialnetworking.userservice.dto.request.UserEditAvatar;
 import com.socialnetworking.userservice.dto.request.UserEditRequest;
+import com.socialnetworking.userservice.dto.request.UserRequest;
 import com.socialnetworking.userservice.model.User;
 import com.socialnetworking.userservice.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,12 +25,12 @@ public class UserController {
     private UserService userService;
 
     @PostMapping("/get-info")
-    public ResponseEntity<?> getInfo(@RequestBody User request){
+    public ResponseEntity<?> getInfo(@RequestBody UserRequest request){
         return new ResponseEntity<>(userService.getInfo(request), HttpStatus.OK);
     }
 
     @PostMapping("/get-avatar")
-    public ResponseEntity<?> getAvatar(@RequestBody User request){
+    public ResponseEntity<?> getAvatar(@RequestBody UserRequest request){
         return new ResponseEntity<>(userService.getAvatar(request), HttpStatus.OK);
     }
 

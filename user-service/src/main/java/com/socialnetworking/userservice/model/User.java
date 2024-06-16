@@ -18,7 +18,9 @@ public class User {
     private String userId;
     private String name;
     private Date birthday;
+    @Column(unique = true)
     private String username;
+    @Column(unique = true)
     private String email;
     private String password;
     @OneToOne(cascade = CascadeType.ALL)

@@ -86,49 +86,65 @@ public class PhotoServiceImpl implements PhotoService {
 
     @RabbitListener(queues = "${rabbitmq.post_update_queue.name}")
     public String handlePostUpdateMessage(PostResponse postResponse) {
+        try {
+            // Your business logic here
+            LOGGER.info("Update Received message: {}", postResponse);
+            List<String> rep = new ArrayList<>();
+            Long postId = postResponse.getPostId();
+            Long userId= postResponse.getUserId();
+            LocalDateTime createdAt = postResponse.getCreatedAt();
+            LOGGER.info("Update Post ID: {} {}", postId, userId);
+            List<FileData> imageFiles = postResponse.getFiles();
+            List<Photo> findPhoto = photoRepository.findByPostIdAndIsDeletedFalse(postId);
+            if(findPhoto!=null){
+                photoRepository.deleteAll(findPhoto);
+            }
+            if(imageFiles!=null){
+                LOGGER.info("Update Number of image files: {}", imageFiles.size());
+                for (int i = 0; i < imageFiles.size(); i++) {
 
-        LOGGER.info("Received message: {}", postResponse);
-        List<String> rep = new ArrayList<>();
-        Long postId = postResponse.getPostId();
-        Long userId= postResponse.getUserId();
-        LocalDateTime createdAt = postResponse.getCreatedAt();
-        LOGGER.info("Post ID: {}", postId, userId);
-//        List<byte[]> imageFiles = postResponse.getFiles();
-        List<FileData> imageFiles = postResponse.getFiles();
-        LOGGER.info("Number of image files: {}", imageFiles.size());
+                    try {
+                        FileData fileData = imageFiles.get(i);
+                        byte[] fileContent = fileData.getContent();
+                        String mimeType = fileData.getMimeType();
+                        String extension = fileData.getExtension();
+                        LOGGER.info("MIME Type: {}", mimeType);
+                        MultipartFile multipartFile = FileUtil.convertToMultipartFile(fileContent, "file_" + postId + "_" + i + "." + extension);
 
-//        for (int i = 0; i < imageFiles.size(); i++) {
-//
-//            try {
-//                FileData fileData = imageFiles.get(i);
-//                byte[] fileContent = fileData.getContent();
-//                String mimeType = fileData.getMimeType();
-//                String extension = fileData.getExtension();
-//                LOGGER.info("MIME Type: {}", mimeType);
-//                MultipartFile multipartFile = FileUtil.convertToMultipartFile(fileContent, "file_" + postId + "_" + i + "." + extension);
-//
-//                String fileName = saveFile(multipartFile);
-//                String imageUrl = uploadDir + fileName;
-//
-//                Photo photo = new Photo();
-//                photo.setImageUrl(imageUrl);
-//                photo.setPostId(postId);
-//                photo.setUserId(userId);
-//                photo.setName(multipartFile.getOriginalFilename());
-//                photo.setType(mimeType);
-//                photo.setCreatedAt(createdAt);
-//                photo.setCreatedBy(userId);
-//                photo.setIsDeleted(false);
-//                photoRepository.save(photo);
-//                LOGGER.info("Saved photo: {}", photo);
-//                rep.add(imageUrl+ "+"+mimeType);
-//
-//
-//            } catch (IOException e) {
-//                LOGGER.error("Error saving file: {}", e.getMessage(), e);
-//            }
-//        }
-        return rep.toString();
+                        String fileName = saveFile(multipartFile);
+                        String imageUrl = uploadDir + fileName;
+
+                        Photo photo = new Photo();
+                        photo.setImageUrl(imageUrl);
+                        photo.setPostId(postId);
+                        photo.setUserId(userId);
+                        photo.setName(multipartFile.getOriginalFilename());
+                        photo.setType(mimeType);
+                        photo.setUpdatedAt(createdAt);
+                        photo.setUpdatedBy(userId);
+                        photo.setCreatedAt(createdAt);
+                        photo.setCreatedBy(userId);
+                        photo.setIsDeleted(false);
+                        photoRepository.save(photo);
+                        LOGGER.info("Saved photo: {}", photo);
+                        rep.add(imageUrl+ "+"+mimeType);
+
+
+                    } catch (IOException e) {
+                        LOGGER.error("Error saving file: {}", e.getMessage(), e);
+                    }
+                }
+            }
+            // Perform operations based on the postResponse
+
+
+
+            return rep.toString();
+        } catch (Exception e) {
+            LOGGER.error("Error processing message: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to process message", e);
+        }
+
     }
 
     @RabbitListener(queues = "${rabbitmq.avatar_queue.name}")

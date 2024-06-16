@@ -45,13 +45,15 @@ public class PostController {
             @RequestParam(value = "userId") Long userId,
             @RequestParam(value = "title", required = false) String title) throws IOException {
 
-        for (MultipartFile file : files) {
-            if (!FileUtil.isAllowedMimeType(file)) {
-                return new ResponseEntity<>("File type not supported: " + file.getContentType(), HttpStatus.BAD_REQUEST);
-            }
-        }
         PostRequest postRequest = new PostRequest();
-        postRequest.setFiles(files);
+        if(files!=null){
+            for (MultipartFile file : files) {
+                if (!FileUtil.isAllowedMimeType(file)) {
+                    return new ResponseEntity<>("File type not supported: " + file.getContentType(), HttpStatus.BAD_REQUEST);
+                }
+            }
+            postRequest.setFiles(files);
+        }
         postRequest.setTitle(title);
         postRequest.setUserId(userId);
 
@@ -61,14 +63,22 @@ public class PostController {
     public ResponseEntity<?> getPost(@PathVariable("id") Long id) throws IOException {
         return new ResponseEntity<>(postService.getPostByPostId(id), HttpStatus.OK);
     }
+    @GetMapping("/get-posts-by-user-id/{id}")
+    public ResponseEntity<?> getPostByUserId(@PathVariable("id") Long userId) throws IOException {
+        return new ResponseEntity<>(postService.getPostsByUserId(userId), HttpStatus.OK);
+    }
+
 
     @GetMapping("/get-post-save-draft/{id}")
     public ResponseEntity<?> getPostSaveDraft(@PathVariable("id") Long id) throws IOException {
         return new ResponseEntity<>(postService.getPostSaveDraftByUserId(id), HttpStatus.OK);
     }
 
+
+
+
     @PostMapping("/delete/draft")
-    public ResponseEntity<?> deleteDraft(@RequestBody PostDeleteRequest postDeleteRequest) {
+    public ResponseEntity<?> deleteDraft(@RequestBody PostRequest postDeleteRequest) {
         BaseResponse response = postService.deleteSaveDraft(postDeleteRequest);
         HttpStatus status = response.getErrorCode().equals(HttpStatus.OK.name()) ? HttpStatus.OK : HttpStatus.NOT_FOUND;
         return new ResponseEntity<>(response, status);
@@ -88,18 +98,41 @@ public class PostController {
                                         @RequestParam(value = "id") Long id,
                                         @RequestParam(value = "title", required = false) String title) throws IOException {
 
-        for (MultipartFile file : files) {
-            if (!FileUtil.isAllowedMimeType(file)) {
-                return new ResponseEntity<>("File type not supported: " + file.getContentType(), HttpStatus.BAD_REQUEST);
-            }
-        }
         PostRequest postRequest = new PostRequest();
+        if(files!=null){
+            for (MultipartFile file : files) {
+                if (!FileUtil.isAllowedMimeType(file)) {
+                    return new ResponseEntity<>("File type not supported: " + file.getContentType(), HttpStatus.BAD_REQUEST);
+                }
+            }
+            postRequest.setFiles(files);
+        }
         postRequest.setId(id);
-        postRequest.setFiles(files);
+        postRequest.setTitle(title);
+        postRequest.setUserId(userId);
+        return new ResponseEntity<>(postService.updatePost(postRequest), HttpStatus.OK);
+    }
+
+    @PostMapping( "/update-save-draft")
+    public ResponseEntity<?> updatePostSaveDraft(@RequestParam(value = "files", required = false) List<MultipartFile> files,
+                                                 @RequestParam(value = "userId") Long userId,
+                                                 @RequestParam(value = "id") Long id,
+                                                     @RequestParam(value = "title", required = false) String title) throws IOException {
+
+        PostRequest postRequest = new PostRequest();
+        if(files!=null){
+            for (MultipartFile file : files) {
+                if (!FileUtil.isAllowedMimeType(file)) {
+                    return new ResponseEntity<>("File type not supported: " + file.getContentType(), HttpStatus.BAD_REQUEST);
+                }
+            }
+            postRequest.setFiles(files);
+        }
+        postRequest.setId(id);
         postRequest.setTitle(title);
         postRequest.setUserId(userId);
 
-        return new ResponseEntity<>(postService.updatePost(postRequest), HttpStatus.OK);
+        return new ResponseEntity<>(postService.updatePostSaveDraft(postRequest), HttpStatus.OK);
     }
 
 

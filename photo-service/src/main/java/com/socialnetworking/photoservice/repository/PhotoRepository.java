@@ -8,8 +8,7 @@ import java.util.List;
 
 @Repository
 public interface PhotoRepository extends JpaRepository<Photo, Long> {
-
-    Photo findPhotoByPostIdAndIsDeletedFalse(Long id);
+    List<Photo> findByPostIdAndIsDeletedFalse(Long postId);
 
 
 }
