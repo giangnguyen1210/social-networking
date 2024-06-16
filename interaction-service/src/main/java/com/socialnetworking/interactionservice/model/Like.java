@@ -1,5 +1,6 @@
 package com.socialnetworking.interactionservice.model;
 
+import com.socialnetworking.interactionservice.model.base.AuditModel;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -7,7 +8,7 @@ import javax.persistence.*;
 @Entity
 @Data
 @Table(name="likes")
-public class Like {
+public class Like extends AuditModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

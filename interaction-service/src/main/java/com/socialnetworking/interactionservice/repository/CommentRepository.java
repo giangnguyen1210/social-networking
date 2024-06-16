@@ -6,9 +6,20 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface CommentRepository extends JpaRepository<Comment, Long> {
-    List<Comment> findByPostId(Long postId);
-    List<Comment> findByParentId(Long parentId); // Phương thức mới để lấy các replies của một comment
+
+    Optional<Comment> findByIdAndIsDeletedFalse(Long id);
+    List<Comment> getCommentsByPostIdAndIsDeletedFalse(Long postId);
+    List<Comment> findByParentIdAndIsDeletedFalse(Long parentId); // Phương thức mới để lấy các replies của một comment
+
+    Comment getCommentByIdAndIsDeletedFalse(Long commentId);
+
+
+
+//    List<Comment>
+
+
 }

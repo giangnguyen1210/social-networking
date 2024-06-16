@@ -37,6 +37,9 @@ public class PhotoServiceImpl implements PhotoService {
     private AvatarRepository avatarRepository;
     @Value("${file.upload-dir}")
     private String uploadDir;
+
+    @Value("${file.upload-dir.avatar}")
+    private String avatarDir;
     private static final Logger LOGGER = LoggerFactory.getLogger(PhotoServiceImpl.class);
     @RabbitListener(queues = "${rabbitmq.queue.name}")
     public String handlePostMessage(PostResponse postResponse) {
@@ -160,8 +163,8 @@ public class PhotoServiceImpl implements PhotoService {
         String extension = imageFile.getExtension();
         LOGGER.info("MIME Type: {}", mimeType);
         MultipartFile multipartFile = FileUtil.convertToMultipartFile(fileContent, "file_" + userId + "." + extension);
-        String fileName = saveFile(multipartFile);
-        String imageUrl = uploadDir + fileName;
+        String fileName = saveFileAvatar(multipartFile);
+        String imageUrl = avatarDir + fileName;
 
         Avatar checkAvatar = avatarRepository.findAvatarByUserId(userId);
         if (checkAvatar != null) {
@@ -192,6 +195,14 @@ public class PhotoServiceImpl implements PhotoService {
     private String saveFile(MultipartFile file) throws IOException {
         String fileName = System.currentTimeMillis() + "-" + file.getOriginalFilename();
         Path filePath = Paths.get(uploadDir + fileName);
+        Files.createDirectories(filePath.getParent());
+        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+        return fileName;
+    }
+
+    private String saveFileAvatar(MultipartFile file) throws IOException {
+        String fileName = System.currentTimeMillis() + "-" + file.getOriginalFilename();
+        Path filePath = Paths.get(avatarDir + fileName);
         Files.createDirectories(filePath.getParent());
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
         return fileName;

@@ -11,6 +11,4 @@ public class PostRequest {
     private String title;
     private Long userId;
     private List<MultipartFile> files;
-
-    // Getters và setters
 }

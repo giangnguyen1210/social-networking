@@ -2,8 +2,6 @@ package com.socialnetworking.postservice.controller;
 
 import com.socialnetworking.postservice.dto.request.PostDeleteRequest;
 import com.socialnetworking.postservice.dto.request.PostRequest;
-import com.socialnetworking.postservice.producer.PostEventProducer;
-import com.socialnetworking.postservice.repository.PostRepository;
 import com.socialnetworking.postservice.service.PostService;
 import com.socialnetworking.postservice.util.FileUtil;
 import com.socialnetworking.shared_service.dto.response.BaseResponse;
@@ -13,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.persistence.EntityNotFoundException;
 import java.io.IOException;
 import java.util.List;
 @RestController
@@ -42,8 +39,8 @@ public class PostController {
 
     @PostMapping( "/create-save-draft")
     public ResponseEntity<?> createPostSaveDraft(@RequestParam(value = "files", required = false) List<MultipartFile> files,
-            @RequestParam(value = "userId") Long userId,
-            @RequestParam(value = "title", required = false) String title) throws IOException {
+                                                @RequestParam(value = "userId") Long userId,
+                                                @RequestParam(value = "title", required = false) String title){
 
         PostRequest postRequest = new PostRequest();
         if(files!=null){
@@ -60,43 +57,34 @@ public class PostController {
         return new ResponseEntity<>(postService.createPostSaveDraft(postRequest), HttpStatus.OK);
     }
     @GetMapping("/get/{id}")
-    public ResponseEntity<?> getPost(@PathVariable("id") Long id) throws IOException {
+    public ResponseEntity<?> getPostByPostId(@PathVariable("id") Long id)  {
         return new ResponseEntity<>(postService.getPostByPostId(id), HttpStatus.OK);
     }
     @GetMapping("/get-posts-by-user-id/{id}")
-    public ResponseEntity<?> getPostByUserId(@PathVariable("id") Long userId) throws IOException {
+    public ResponseEntity<?> getPostByUserId(@PathVariable("id") Long userId) {
         return new ResponseEntity<>(postService.getPostsByUserId(userId), HttpStatus.OK);
     }
-
-
     @GetMapping("/get-post-save-draft/{id}")
-    public ResponseEntity<?> getPostSaveDraft(@PathVariable("id") Long id) throws IOException {
+    public ResponseEntity<?> getPostSaveDraft(@PathVariable("id") Long id) {
         return new ResponseEntity<>(postService.getPostSaveDraftByUserId(id), HttpStatus.OK);
     }
-
-
-
-
     @PostMapping("/delete/draft")
-    public ResponseEntity<?> deleteDraft(@RequestBody PostRequest postDeleteRequest) {
-        BaseResponse response = postService.deleteSaveDraft(postDeleteRequest);
+    public ResponseEntity<?> deleteDraft(@RequestBody PostDeleteRequest postRequest) {
+        BaseResponse response = postService.deleteSaveDraft(postRequest);
         HttpStatus status = response.getErrorCode().equals(HttpStatus.OK.name()) ? HttpStatus.OK : HttpStatus.NOT_FOUND;
         return new ResponseEntity<>(response, status);
     }
-
-
     @PostMapping("/delete")
     public ResponseEntity<BaseResponse> deletePost(@RequestBody PostDeleteRequest postDeleteRequest) {
         BaseResponse response = postService.deletePost(postDeleteRequest);
         HttpStatus status = response.getErrorCode().equals(HttpStatus.OK.name()) ? HttpStatus.OK : HttpStatus.NOT_FOUND;
         return new ResponseEntity<>(response, status);
     }
-
     @PostMapping("/update")
     public ResponseEntity<?> updatePost(@RequestParam(value = "files", required = false) List<MultipartFile> files,
                                         @RequestParam(value = "userId") Long userId,
                                         @RequestParam(value = "id") Long id,
-                                        @RequestParam(value = "title", required = false) String title) throws IOException {
+                                        @RequestParam(value = "title", required = false) String title) {
 
         PostRequest postRequest = new PostRequest();
         if(files!=null){
@@ -112,7 +100,6 @@ public class PostController {
         postRequest.setUserId(userId);
         return new ResponseEntity<>(postService.updatePost(postRequest), HttpStatus.OK);
     }
-
     @PostMapping( "/update-save-draft")
     public ResponseEntity<?> updatePostSaveDraft(@RequestParam(value = "files", required = false) List<MultipartFile> files,
                                                  @RequestParam(value = "userId") Long userId,
@@ -134,6 +121,4 @@ public class PostController {
 
         return new ResponseEntity<>(postService.updatePostSaveDraft(postRequest), HttpStatus.OK);
     }
-
-
 }

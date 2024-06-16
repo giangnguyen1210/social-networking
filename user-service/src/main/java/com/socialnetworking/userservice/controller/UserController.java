@@ -1,20 +1,15 @@
 package com.socialnetworking.userservice.controller;
 
-import com.socialnetworking.shared_service.dto.response.BaseResponse;
 import com.socialnetworking.shared_service.util.FileUtil;
 import com.socialnetworking.userservice.dto.request.UserEditAvatar;
 import com.socialnetworking.userservice.dto.request.UserEditRequest;
 import com.socialnetworking.userservice.dto.request.UserRequest;
-import com.socialnetworking.userservice.model.User;
 import com.socialnetworking.userservice.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
-import java.util.List;
 
 
 @RestController
@@ -41,8 +36,7 @@ public class UserController {
 
     @PostMapping("/update-avatar")
     public ResponseEntity<?> updateAvatar(@RequestParam("files") MultipartFile file,
-                                     @RequestParam("userId") Long userId,
-                                     @RequestParam String title){
+                                     @RequestParam("userId") Long userId){
         if (!FileUtil.isAllowedMimeType(file)) {
             return new ResponseEntity<>("File type not supported: " + file.getContentType(), HttpStatus.BAD_REQUEST);
         }

@@ -1,5 +1,6 @@
 package com.socialnetworking.postservice.model;
 
+import com.socialnetworking.postservice.model.base.AuditModel;
 import lombok.Data;
 
 import javax.persistence.Entity;
@@ -10,7 +11,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Data
-public class Comment {
+public class Comment extends AuditModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -18,5 +19,5 @@ public class Comment {
     private Long userId;
     private Long parentId; // Field mới để lưu trữ ID của comment gốc (nếu có)
     private String content;
-    private LocalDateTime createdAt;
+    private Boolean isDeleted = false;
 }

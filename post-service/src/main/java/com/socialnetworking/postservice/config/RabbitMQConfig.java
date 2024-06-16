@@ -31,6 +31,8 @@ public class RabbitMQConfig {
     private String postUpdateExchange;
     @Value("${rabbitmq.post_update_routing.key}")
     private String postUpdateRoutingKey;
+
+
     @Bean
     public Queue queue() {
         return new Queue(queue, false);
@@ -55,6 +57,8 @@ public class RabbitMQConfig {
     public Binding postUpdateBinding(Queue queue, TopicExchange exchange) {
         return BindingBuilder.bind(postUpdateQueue()).to(postUpdateExchange()).with(postUpdateRoutingKey);
     }
+
+
     @Bean
     public RabbitTemplate rabbitTemplate(final ConnectionFactory connectionFactory) {
         final RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);

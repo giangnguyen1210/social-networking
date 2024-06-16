@@ -20,7 +20,7 @@ public interface PostService {
 
     BaseResponse getPostSaveDraftByUserId(Long id);
 
-    BaseResponse deleteSaveDraft(PostRequest userId);
+    BaseResponse deleteSaveDraft(PostDeleteRequest userId);
 
     BaseResponse deletePost(PostDeleteRequest postId);
 }

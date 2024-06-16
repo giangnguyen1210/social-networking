@@ -4,6 +4,7 @@ import com.socialnetworking.userservice.config.JwtService;
 import com.socialnetworking.userservice.dto.request.LoginRequest;
 import com.socialnetworking.userservice.dto.request.OTPVerificationRequest;
 import com.socialnetworking.userservice.dto.request.RegisterRequest;
+import com.socialnetworking.userservice.dto.request.UserRequest;
 import com.socialnetworking.userservice.dto.response.AuthResponse;
 import com.socialnetworking.userservice.model.OTP;
 import com.socialnetworking.userservice.model.Role;
@@ -205,6 +206,13 @@ public class AuthServiceImpl implements AuthService {
         baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
         baseResponse.setErrorDesc("OTP đã hết hạn");
         return baseResponse;
+    }
+
+    @Override
+    public BaseResponse resetPassword(UserRequest request) {
+        BaseResponse baseResponse = new BaseResponse();
+
+        return null;
     }
 
     public static String generateOTP() throws NoSuchAlgorithmException {

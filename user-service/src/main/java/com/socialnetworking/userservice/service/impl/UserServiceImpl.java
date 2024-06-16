@@ -195,15 +195,20 @@ public class UserServiceImpl implements UserService {
     @Override
     public BaseResponse getAvatar(UserRequest userRequest) {
         BaseResponse baseResponse = new BaseResponse();
-        AvatarResponse avatarResponse = new AvatarResponse();
         Long userId = userRequest.getId();
         if(userId==null){
             baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
             return baseResponse;
         }else{
             Avatar avatar = avatarRepository.findAvatarByUserId(userId);
-            baseResponse.setData(avatar);
-            baseResponse.setErrorCode(HttpStatus.OK.name());
+            if(avatar==null){
+                baseResponse.setErrorCode(HttpStatus.NOT_FOUND.name());
+                baseResponse.setErrorDesc("No avatar found");
+            }else{
+                baseResponse.setData(avatar);
+                baseResponse.setErrorCode(HttpStatus.OK.name());
+                baseResponse.setErrorDesc("Get avatar success");
+            }
         }
         return baseResponse;
     }

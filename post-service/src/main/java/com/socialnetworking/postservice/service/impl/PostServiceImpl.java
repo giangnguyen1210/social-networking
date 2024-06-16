@@ -277,7 +277,7 @@ public class PostServiceImpl implements PostService {
     }
     /* delete save draft */
     @Override
-    public BaseResponse deleteSaveDraft(PostRequest postDeleteRequest) {
+    public BaseResponse deleteSaveDraft(PostDeleteRequest postDeleteRequest) {
         BaseResponse baseResponse = new BaseResponse();
         Post draftPost = postRepository.findFirstByUserIdAndIsDraftTrueAndIsDeletedFalse(postDeleteRequest.getUserId());
         if (draftPost != null) {
