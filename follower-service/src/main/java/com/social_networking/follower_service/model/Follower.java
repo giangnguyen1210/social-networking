@@ -1,7 +1,8 @@
 package com.social_networking.follower_service.model;
 
-import jakarta.persistence.*;
 import lombok.Data;
+
+import javax.persistence.*;
 
 @Entity
 @Data
@@ -12,4 +13,5 @@ public class Follower {
     private Long id;
     private Long followerId;
     private Long followingId;
+    private Boolean isFollowing = true;
 }

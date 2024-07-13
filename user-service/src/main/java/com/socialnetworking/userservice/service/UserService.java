@@ -2,16 +2,29 @@ package com.socialnetworking.userservice.service;
 
 
 import com.socialnetworking.shared_service.dto.response.BaseResponse;
+import com.socialnetworking.userservice.dto.request.FollowerRequest;
 import com.socialnetworking.userservice.dto.request.UserEditAvatar;
 import com.socialnetworking.userservice.dto.request.UserEditRequest;
 import com.socialnetworking.userservice.dto.request.UserRequest;
-import com.socialnetworking.userservice.model.User;
+
+import java.io.IOException;
 
 public interface UserService {
     BaseResponse updateInfo(UserEditRequest request);
     BaseResponse updateAvatar(UserEditAvatar request);
+    BaseResponse getUsersNotFollowing(Long id);
+    BaseResponse getAllUsersFollowing(Long id);
 
-    BaseResponse getInfo(UserRequest user);
+    BaseResponse getAllUsersFollower(Long id);
+
+    BaseResponse getAllUser();
+
+    BaseResponse checkIsFollowing(FollowerRequest followerRequest);
+
+
+    BaseResponse getUserInfoByUsername(String username) throws IOException;
+    BaseResponse getUserInfoById(Long id) throws IOException;
+
     BaseResponse getAvatar(UserRequest user);
 
 

@@ -3,17 +3,22 @@ package com.socialnetworking.userservice.service.impl;
 import com.socialnetworking.shared_service.dto.response.AvatarResponse;
 import com.socialnetworking.shared_service.dto.response.BaseResponse;
 import com.socialnetworking.shared_service.dto.response.FileData;
+import com.socialnetworking.userservice.dto.request.FollowerRequest;
 import com.socialnetworking.userservice.dto.request.UserEditAvatar;
 import com.socialnetworking.userservice.dto.request.UserEditRequest;
 import com.socialnetworking.userservice.dto.request.UserRequest;
+import com.socialnetworking.userservice.dto.response.UserResponse;
 import com.socialnetworking.userservice.model.Avatar;
 import com.socialnetworking.userservice.model.Gender;
 import com.socialnetworking.userservice.model.User;
 import com.socialnetworking.userservice.reducer.UserEventProducer;
 import com.socialnetworking.userservice.repository.AvatarRepository;
+import com.socialnetworking.userservice.repository.FollowerRepository;
 import com.socialnetworking.userservice.repository.GenderRepository;
 import com.socialnetworking.userservice.repository.UserRepository;
 import com.socialnetworking.userservice.service.UserService;
+import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,10 +26,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -39,6 +44,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private UserEventProducer userEventProducer;
+
+    @Autowired
+    private FollowerRepository followerRepository;
     private static final Logger LOGGER = LoggerFactory.getLogger(UserServiceImpl.class);
 
 
@@ -46,7 +54,7 @@ public class UserServiceImpl implements UserService {
     public BaseResponse updateInfo(UserEditRequest request) {
         BaseResponse baseResponse = new BaseResponse();
         Optional<User> optionalUser = userRepository.findUserByUserId(request.getUserId());
-        User accountUsername = userRepository.findUserByUsername(request.getUsername());
+        User accountUsername = userRepository.findUserByUsernameAndIsDeletedFalse(request.getUsername());
         if(optionalUser.isPresent()) {
             User user = optionalUser.get();
             if(accountUsername!=null){
@@ -106,7 +114,7 @@ public class UserServiceImpl implements UserService {
                 avatarResponse.setFile(convertMultipartFile(request.getFile()));
                 avatarResponse.setUpdatedAt(LocalDateTime.now());
                 avatarResponse.setUpdatedBy(request.getUserId());
-                String reply = userEventProducer.sendPost(avatarResponse);
+                String reply = userEventProducer.sendAvatar(avatarResponse);
                 LOGGER.info(String.format("Reply message -> %s", reply));
 
                 String cleanedReply = reply.replace("[", "").replace("]", "");
@@ -117,6 +125,7 @@ public class UserServiceImpl implements UserService {
                     checkAvatar.setImageUrl(imageUrl);
                     checkAvatar.setUserId(request.getUserId());
                     checkAvatar.setMimeType(mimeType);
+                    checkAvatar.setFilename(imageUrl);
                     checkAvatar.setUpdatedBy(request.getUserId());
                     checkAvatar.setUpdatedAt(LocalDateTime.now());
                     avatarRepository.save(checkAvatar);
@@ -133,7 +142,7 @@ public class UserServiceImpl implements UserService {
                 avatarResponse.setFile(convertMultipartFile(request.getFile()));
                 avatarResponse.setCreatedAt(LocalDateTime.now());
                 avatarResponse.setCreatedBy(request.getUserId());
-                String reply = userEventProducer.sendPost(avatarResponse);
+                String reply = userEventProducer.sendAvatar(avatarResponse);
                 String cleanedReply = reply.replace("[", "").replace("]", "");
                 String[] parts = cleanedReply.split("\\+");
                 if (parts.length == 2) {
@@ -159,6 +168,143 @@ public class UserServiceImpl implements UserService {
         }
         return baseResponse;
     }
+
+    @Override
+    public BaseResponse getUsersNotFollowing(Long id) {
+        BaseResponse baseResponse = new BaseResponse();
+        if(id==null){
+            baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
+            baseResponse.setErrorCode("Id không được để trống");
+        }else{
+            List<User> notFollowings = userRepository.findUsersNotFollowedByUserId(id);
+            List<UserResponse> userResponses = new ArrayList<>();
+
+            for (User user : notFollowings) {
+                try {
+                    UserResponse userResponse = getUserInfo(user.getUsername());
+                    boolean isFollowing = checkFollowing(id, user.getId());
+                    userResponse.setFollowing(isFollowing);
+                    userResponses.add(userResponse);
+                } catch (IOException e) {
+                    // Handle exception
+                    baseResponse.setErrorCode(HttpStatus.INTERNAL_SERVER_ERROR.name());
+                    baseResponse.setErrorDesc("Error fetching user info for user: " + user.getUsername());
+                    return baseResponse;
+                }
+            }
+
+            baseResponse.setData(userResponses);
+            baseResponse.setErrorCode(HttpStatus.OK.name());
+            baseResponse.setErrorDesc("Lấy danh sách chưa following thành công");
+            baseResponse.setTotalRecords(userResponses.size());
+
+        }
+        return baseResponse;
+    }
+
+    @Override
+    public BaseResponse getAllUsersFollowing(Long id) {
+        BaseResponse baseResponse = new BaseResponse();
+        if(id==null){
+            baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
+            baseResponse.setErrorCode("Id không được để trống");
+        }else{
+            List<User> followings = userRepository.findUsersFollowedByUserId(id);
+            List<UserResponse> userResponses = new ArrayList<>();
+
+            for (User user : followings) {
+                try {
+                    UserResponse userResponse = getUserInfo(user.getUsername());
+                    boolean isFollowing = checkFollowing(id, user.getId());
+                    userResponse.setFollowing(isFollowing);
+                    userResponses.add(userResponse);
+                } catch (IOException e) {
+                    // Handle exception
+                    baseResponse.setErrorCode(HttpStatus.INTERNAL_SERVER_ERROR.name());
+                    baseResponse.setErrorDesc("Error fetching user info for user: " + user.getUsername());
+                    return baseResponse;
+                }
+            }
+
+            baseResponse.setData(userResponses);
+            baseResponse.setErrorCode(HttpStatus.OK.name());
+            baseResponse.setErrorDesc("Lấy danh sách người dùng following thành công");
+            baseResponse.setTotalRecords(userResponses.size());
+
+        }
+        return baseResponse;
+    }
+
+
+    @Override
+    public BaseResponse getAllUsersFollower(Long id) {
+        BaseResponse baseResponse = new BaseResponse();
+        if(id==null){
+            baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
+            baseResponse.setErrorCode("Id không được để trống");
+        }else{
+            List<User> followers = userRepository.findUsersFollowersOfUserId(id);
+            List<UserResponse> userResponses = new ArrayList<>();
+            for (User user : followers) {
+                try {
+                    UserResponse userResponse = getUserInfo(user.getUsername());
+                    boolean isFollowing = checkFollowing(id, user.getId());
+                    userResponse.setFollowing(isFollowing);
+                    userResponses.add(userResponse);
+                } catch (IOException e) {
+                    baseResponse.setErrorCode(HttpStatus.INTERNAL_SERVER_ERROR.name());
+                    baseResponse.setErrorDesc("Error fetching user info for user: " + user.getUsername());
+                    return baseResponse;
+                }
+            }
+
+            baseResponse.setData(userResponses);
+            baseResponse.setErrorCode(HttpStatus.OK.name());
+            baseResponse.setErrorDesc("Lấy danh sách người dùng follower thành công");
+            baseResponse.setTotalRecords(userResponses.size());
+        }
+        return baseResponse;
+    }
+
+
+
+    @Override
+    public BaseResponse getAllUser() {
+        BaseResponse baseResponse = new BaseResponse();
+        List<User> users = userRepository.findAllByIsDeletedFalse();
+        baseResponse.setData(users);
+        return baseResponse;
+    }
+
+    @Override
+    public BaseResponse checkIsFollowing(FollowerRequest followerRequest) {
+        BaseResponse baseResponse = new BaseResponse();
+        if(followerRequest.getFollowingId()!=null && followerRequest.getUserId()!=null && !followerRequest.getUserId().equals(followerRequest.getFollowingId())){
+            boolean isFollowing = userRepository.checkUserIsFollowingByUserId(followerRequest.getUserId(), followerRequest.getFollowingId());
+            if(isFollowing){
+                baseResponse.setData(true);
+                baseResponse.setErrorCode(HttpStatus.OK.name());
+                baseResponse.setErrorDesc("Đang theo dõi");
+            }else{
+                baseResponse.setData(false);
+                baseResponse.setErrorCode(HttpStatus.OK.name());
+                baseResponse.setErrorDesc("Chưa theo dõi");
+            }
+        }else {
+            baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
+            baseResponse.setErrorDesc("Bạn phải nhập đầy đủ thông tin");
+        }
+        return baseResponse;
+    }
+
+
+    public boolean checkFollowing(Long userId, Long followingId) {
+        if(userRepository.checkUserIsFollowingByUserId(userId, followingId)){
+            return true;
+        }
+        return false;
+    }
+
     public FileData convertMultipartFile(MultipartFile file) {
         try {
             byte[] content = file.getBytes();
@@ -179,17 +325,98 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public BaseResponse getInfo(UserRequest user) {
+    public BaseResponse getUserInfoByUsername(String username) throws IOException {
         BaseResponse baseResponse = new BaseResponse();
-        if(user.getUserId()==null && user.getUsername()==null){
+        if(username==null){
             baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
             return baseResponse;
         }else{
-            User user1 = userRepository.findUserByUsername(user.getUsername());
-            baseResponse.setData(user1);
-            baseResponse.setErrorCode(HttpStatus.OK.name());
+            User user = userRepository.findUserByUsernameAndIsDeletedFalse(username);
+            if(user!=null){
+                Avatar avatar = avatarRepository.findAvatarByUserId(user.getId());
+                AvatarResponse avatarResponse = new AvatarResponse();
+                if (avatar != null) {
+                    String imageUrl = avatar.getImageUrl();
+                    byte[] fileContent = FileUtils.readFileToByteArray(new File(imageUrl));
+                    String encodedString = Base64.getEncoder().encodeToString(fileContent);
+                    avatarResponse.setDataFile(encodedString);
+                    avatarResponse.setCreatedAt(avatar.getCreatedAt());
+                    avatarResponse.setUpdatedAt(avatar.getUpdatedAt());
+                }
+                UserResponse userResponse = getUserResponse(avatarResponse, user);
+                baseResponse.setErrorCode(HttpStatus.OK.name());
+                baseResponse.setErrorDesc("Get info success");
+                baseResponse.setData(userResponse);
+            }else{
+                baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
+                baseResponse.setErrorDesc("User is not exist");
+            }
+
         }
         return baseResponse;
+    }
+
+    @Override
+    public BaseResponse getUserInfoById(Long id) throws IOException {
+        BaseResponse baseResponse = new BaseResponse();
+        if(id==null){
+            baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
+            return baseResponse;
+        }else{
+            User user = userRepository.findUserByIdAndIsDeletedFalse(id);
+            if(user!=null){
+                Avatar avatar = avatarRepository.findAvatarByUserId(user.getId());
+                AvatarResponse avatarResponse = new AvatarResponse();
+                if (avatar != null) {
+                    String imageUrl = avatar.getImageUrl();
+                    byte[] fileContent = FileUtils.readFileToByteArray(new File(imageUrl));
+                    String encodedString = Base64.getEncoder().encodeToString(fileContent);
+                    avatarResponse.setDataFile(encodedString);
+                    avatarResponse.setCreatedAt(avatar.getCreatedAt());
+                    avatarResponse.setUpdatedAt(avatar.getUpdatedAt());
+                }
+                UserResponse userResponse = getUserResponse(avatarResponse, user);
+                baseResponse.setErrorCode(HttpStatus.OK.name());
+                baseResponse.setErrorDesc("Get info success");
+                baseResponse.setData(userResponse);
+            }else{
+                baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
+                baseResponse.setErrorDesc("User is not exist");
+            }
+
+        }
+        return baseResponse;
+    }
+
+    private UserResponse getUserInfo(String username) throws IOException {
+        User user = userRepository.findUserByUsernameAndIsDeletedFalse(username);
+        Avatar avatar = avatarRepository.findAvatarByUserId(user.getId());
+        AvatarResponse avatarResponse = new AvatarResponse();
+        if (avatar != null) {
+            String imageUrl = avatar.getImageUrl();
+            byte[] fileContent = FileUtils.readFileToByteArray(new File(imageUrl));
+            String encodedString = Base64.getEncoder().encodeToString(fileContent);
+            avatarResponse.setDataFile(encodedString);
+            avatarResponse.setCreatedAt(avatar.getCreatedAt());
+            avatarResponse.setUpdatedAt(avatar.getUpdatedAt());
+        }
+        return getUserResponse(avatarResponse, user);
+    }
+
+
+    @NotNull
+    private static UserResponse getUserResponse(AvatarResponse avatarResponse, User user) {
+        UserResponse userResponse = new UserResponse();
+        userResponse.setAvatarData(avatarResponse);
+        userResponse.setId(user.getId());
+        userResponse.setEmail(user.getEmail());
+        userResponse.setBio(user.getBio());
+        userResponse.setName(user.getName());
+        userResponse.setUsername(user.getUsername());
+        userResponse.setPhoneNumber(user.getPhoneNumber());
+        userResponse.setCreatedDate(user.getCreatedDate());
+        userResponse.setUpdatedDate(user.getUpdatedDate());
+        return userResponse;
     }
 
     @Override
@@ -212,4 +439,5 @@ public class UserServiceImpl implements UserService {
         }
         return baseResponse;
     }
+
 }

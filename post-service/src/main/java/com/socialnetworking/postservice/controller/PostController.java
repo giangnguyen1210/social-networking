@@ -57,18 +57,28 @@ public class PostController {
         return new ResponseEntity<>(postService.createPostSaveDraft(postRequest), HttpStatus.OK);
     }
     @GetMapping("/get/{id}")
-    public ResponseEntity<?> getPostByPostId(@PathVariable("id") Long id)  {
+    public ResponseEntity<?> getPostByPostId(@PathVariable("id") Long id) throws IOException {
         return new ResponseEntity<>(postService.getPostByPostId(id), HttpStatus.OK);
     }
     @GetMapping("/get-posts-by-user-id/{id}")
     public ResponseEntity<?> getPostByUserId(@PathVariable("id") Long userId) {
         return new ResponseEntity<>(postService.getPostsByUserId(userId), HttpStatus.OK);
     }
-    @GetMapping("/get-post-save-draft/{id}")
+//    @GetMapping("/get-posts-by-follower/{id}")
+//    public ResponseEntity<?> getPostByFollower(@PathVariable("id") Long followingId){
+//        return new ResponseEntity<>(postService.(followingId),HttpStatus.OK);
+//    }
+
+//    @PostMapping("/following")
+//    public ResponseEntity<BaseResponse> getPostsByFollowingIds(@RequestBody List<Long> followingIds) {
+//        BaseResponse response = postService.getPostsByFollowingIds(followingIds);
+//        return new ResponseEntity<>(response, HttpStatus.OK);
+//    }
+    @GetMapping("/get-save-draft/{id}")
     public ResponseEntity<?> getPostSaveDraft(@PathVariable("id") Long id) {
         return new ResponseEntity<>(postService.getPostSaveDraftByUserId(id), HttpStatus.OK);
     }
-    @PostMapping("/delete/draft")
+    @PostMapping("/delete-save-draft")
     public ResponseEntity<?> deleteDraft(@RequestBody PostDeleteRequest postRequest) {
         BaseResponse response = postService.deleteSaveDraft(postRequest);
         HttpStatus status = response.getErrorCode().equals(HttpStatus.OK.name()) ? HttpStatus.OK : HttpStatus.NOT_FOUND;

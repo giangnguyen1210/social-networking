@@ -20,12 +20,15 @@ public class User {
     private Date birthday;
     @Column(unique = true)
     private String username;
+    private String phoneNumber;
     @Column(unique = true)
     private String email;
     private String password;
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "avatar_id", referencedColumnName = "id")
     private Avatar avatarUrl;
+    private Boolean isDeleted = false;
+    private Boolean isActive = true;
     // Người dùng đang theo dõi
 
 
@@ -46,9 +49,6 @@ public class User {
     @JoinColumn(name = "role_id")
     private Role role;
 
-    @ManyToOne
-    @JoinColumn(name= "user_status_id")
-    private UserStatus status;
 
 
     // Constructors, Getters, Setters

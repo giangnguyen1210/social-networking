@@ -11,5 +11,6 @@ public interface CommentService {
     BaseResponse updateComment(CommentRequest commentRequest);
 
     BaseResponse getCommentsByPostId(Long postId);
+    BaseResponse getCommentsById(Long id);
     BaseResponse getRepliesByCommentId(Long commentId);
 }

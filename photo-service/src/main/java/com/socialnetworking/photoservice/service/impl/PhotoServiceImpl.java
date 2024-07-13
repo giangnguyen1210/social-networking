@@ -10,6 +10,7 @@ import com.socialnetworking.photoservice.util.FileUtil;
 import com.socialnetworking.shared_service.dto.response.AvatarResponse;
 import com.socialnetworking.shared_service.dto.response.FileData;
 import com.socialnetworking.shared_service.dto.response.PostResponse;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -19,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,6 +28,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 
@@ -64,13 +67,14 @@ public class PhotoServiceImpl implements PhotoService {
                 MultipartFile multipartFile = FileUtil.convertToMultipartFile(fileContent, "file_" + postId + "_" + i + "." + extension);
 
                 String fileName = saveFile(multipartFile);
+//                LOGGER.info("fileName: {}", fileName);
                 String imageUrl = uploadDir + fileName;
 
                 Photo photo = new Photo();
                 photo.setImageUrl(imageUrl);
                 photo.setPostId(postId);
                 photo.setUserId(userId);
-                photo.setName(multipartFile.getOriginalFilename());
+                photo.setName(fileName);
                 photo.setType(mimeType);
                 photo.setCreatedAt(createdAt);
                 photo.setIsDeleted(false);
@@ -170,7 +174,7 @@ public class PhotoServiceImpl implements PhotoService {
         if (checkAvatar != null) {
             checkAvatar.setImageUrl(imageUrl);
             checkAvatar.setUserId(userId);
-            checkAvatar.setName(multipartFile.getOriginalFilename());
+            checkAvatar.setName(fileName);
             checkAvatar.setType(mimeType);
             checkAvatar.setUpdatedAt(avatarResponse.getUpdatedAt());
             checkAvatar.setUpdatedBy(userId);
@@ -178,7 +182,7 @@ public class PhotoServiceImpl implements PhotoService {
             checkAvatar = new Avatar();
             checkAvatar.setImageUrl(imageUrl);
             checkAvatar.setUserId(userId);
-            checkAvatar.setName(multipartFile.getOriginalFilename());
+            checkAvatar.setName(fileName);
             checkAvatar.setType(mimeType);
             checkAvatar.setCreatedAt(avatarResponse.getCreatedAt());
             checkAvatar.setCreatedBy(userId);
@@ -190,6 +194,34 @@ public class PhotoServiceImpl implements PhotoService {
         return rep.toString();
     }
 
+
+
+    @Override
+    public BaseResponse getAvatar(Long userId) throws IOException {
+        BaseResponse baseResponse = new BaseResponse();
+        if(userId==null){
+            baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
+            return baseResponse;
+        }else{
+            Avatar avatar = avatarRepository.findAvatarByUserId(userId);
+            if(avatar==null){
+                baseResponse.setErrorCode(HttpStatus.NOT_FOUND.name());
+                baseResponse.setErrorDesc("No avatar found");
+            }else{
+                String imageUrl = avatar.getImageUrl();
+                byte[] fileContent = FileUtils.readFileToByteArray(new File(imageUrl));
+                String encodedString = Base64.getEncoder().encodeToString(fileContent);
+                AvatarResponse avatarResponse = new AvatarResponse();
+                avatarResponse.setCreatedAt(avatar.getCreatedAt());
+                avatarResponse.setUpdatedAt(avatar.getUpdatedAt());
+                avatarResponse.setDataFile(encodedString);
+                baseResponse.setData(avatarResponse);
+                baseResponse.setErrorCode(HttpStatus.OK.name());
+                baseResponse.setErrorDesc("Get avatar success");
+            }
+        }
+        return baseResponse;
+    }
 
 
     private String saveFile(MultipartFile file) throws IOException {

@@ -15,9 +15,9 @@ import java.util.Map;
 public class LikeController {
     @Autowired
     private LikeService likeService;
-    @PostMapping("/status")
-    public ResponseEntity<Map<String, Boolean>> isPostLikedByUser(@RequestBody LikeRequest likeRequest) {
-        boolean isLiked = likeService.isPostLikedByUser(likeRequest.getPostId(), likeRequest.getUserId());
+    @GetMapping("/status/{userId}/{postId}")
+    public ResponseEntity<Map<String, Boolean>> isPostLikedByUser(@PathVariable("userId") Long userId, @PathVariable("postId") Long postId ) {
+        boolean isLiked = likeService.isPostLikedByUser(postId, userId);
         Map<String, Boolean> response = new HashMap<>();
         response.put("isLiked", isLiked);
         return ResponseEntity.ok(response);
@@ -27,9 +27,9 @@ public class LikeController {
         return new ResponseEntity<>(likeService.createLike(likeRequest), HttpStatus.OK);
     }
 
-    @PostMapping("/get-by-post-id")
-    public ResponseEntity<?> getLikeByPostId(@RequestBody LikeRequest likeRequest) {
-        return new ResponseEntity<>(likeService.getLikeByPostId(likeRequest), HttpStatus.OK);
+    @GetMapping("/get-by-post-id/{id}")
+    public ResponseEntity<?> getLikeByPostId(@PathVariable Long id) {
+        return new ResponseEntity<>(likeService.getLikeByPostId(id), HttpStatus.OK);
     }
 
     @PostMapping("/get-by-user-id")

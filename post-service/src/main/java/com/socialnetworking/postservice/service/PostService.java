@@ -14,7 +14,7 @@ public interface PostService {
     BaseResponse updatePost(PostRequest request);
     BaseResponse updatePostSaveDraft(PostRequest request);
 
-    BaseResponse getPostByPostId(Long id);
+    BaseResponse getPostByPostId(Long id) throws IOException;
 
     BaseResponse getPostsByUserId(Long userId);
 
@@ -23,4 +23,7 @@ public interface PostService {
     BaseResponse deleteSaveDraft(PostDeleteRequest userId);
 
     BaseResponse deletePost(PostDeleteRequest postId);
+
+//    public void receiveMessage(List<Long> followingIds);
+//    BaseResponse getPostsByFollowingIds(List<Long> followingIds);
 }

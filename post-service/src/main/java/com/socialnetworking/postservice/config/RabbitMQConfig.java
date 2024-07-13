@@ -4,8 +4,11 @@ package com.socialnetworking.postservice.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.socialnetworking.postservice.consumer.CommentConsumer;
-import org.springframework.amqp.core.*;
-import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import com.socialnetworking.postservice.consumer.LikeConsumer;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
@@ -75,6 +78,11 @@ public class RabbitMQConfig {
 
     @Bean
     public MessageListenerAdapter messageListenerAdapter(CommentConsumer listener) {
+        return new MessageListenerAdapter(listener, jackson2MessageConverter());
+    }
+
+    @Bean
+    public MessageListenerAdapter messageListenerLikeAdapter(LikeConsumer listener) {
         return new MessageListenerAdapter(listener, jackson2MessageConverter());
     }
 

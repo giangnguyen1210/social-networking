@@ -1,6 +1,7 @@
 package com.socialnetworking.userservice.controller;
 
 import com.socialnetworking.shared_service.util.FileUtil;
+import com.socialnetworking.userservice.dto.request.FollowerRequest;
 import com.socialnetworking.userservice.dto.request.UserEditAvatar;
 import com.socialnetworking.userservice.dto.request.UserEditRequest;
 import com.socialnetworking.userservice.dto.request.UserRequest;
@@ -11,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+
 
 @RestController
 @RequestMapping("/api/users")
@@ -19,9 +22,14 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @PostMapping("/get-info")
-    public ResponseEntity<?> getInfo(@RequestBody UserRequest request){
-        return new ResponseEntity<>(userService.getInfo(request), HttpStatus.OK);
+    @GetMapping("/get-info/{username}")
+    public ResponseEntity<?> getInfo(@PathVariable ("username") String username) throws IOException {
+        return new ResponseEntity<>(userService.getUserInfoByUsername(username), HttpStatus.OK);
+    }
+
+    @GetMapping("/get-info-by-id/{id}")
+    public ResponseEntity<?> getInfoById(@PathVariable ("id") Long id) throws IOException {
+        return new ResponseEntity<>(userService.getUserInfoById(id), HttpStatus.OK);
     }
 
     @PostMapping("/get-avatar")
@@ -45,5 +53,32 @@ public class UserController {
         userEditAvatar.setUserId(userId);
         return new ResponseEntity<>(userService.updateAvatar(userEditAvatar), HttpStatus.OK);
     }
+
+    @GetMapping("/get-users-not-following/{id}")
+    public ResponseEntity<?> getAllUsersNotFollowing(@PathVariable Long id){
+        return new ResponseEntity<>(userService.getUsersNotFollowing(id), HttpStatus.OK);
+    }
+
+    @GetMapping("/get-users-following/{id}")
+    public ResponseEntity<?> getAllUsersFollowing(@PathVariable Long id){
+        return new ResponseEntity<>(userService.getAllUsersFollowing(id), HttpStatus.OK);
+    }
+
+    @GetMapping("/get-users-follower/{id}")
+    public ResponseEntity<?> getAllUsersFollower(@PathVariable Long id){
+        return new ResponseEntity<>(userService.getAllUsersFollower(id), HttpStatus.OK);
+    }
+
+//    @GetMapping("/check-is-following")
+//    public ResponseEntity<?> checkIsFollowing(@RequestBody FollowerRequest followerRequest){
+//        return new ResponseEntity<>(userService.checkIsFollowing(followerRequest), HttpStatus.OK);
+//    }
+
+    @GetMapping("/check-is-following/{userId}/{followerId}")
+    public ResponseEntity<?> checkIsFollowing(@PathVariable Long userId, @PathVariable Long followerId) {
+        FollowerRequest followerRequest = new FollowerRequest(userId, followerId);
+        return new ResponseEntity<>(userService.checkIsFollowing(followerRequest), HttpStatus.OK);
+    }
+
 
 }

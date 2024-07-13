@@ -18,5 +18,6 @@ public class Avatar extends AuditModel {
     private Long id;
     private String imageUrl;
     private String mimeType;
+    private String filename;
     private Long userId;
 }

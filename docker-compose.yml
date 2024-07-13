@@ -1,6 +1,23 @@
 version: '3.8'
 
 services:
+  api-gateway:
+    image: your-api-gateway-image
+    container_name: api-gateway
+    ports:
+      - "9191:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=default
+    depends_on:
+      - eureka-server
+
+  eureka-server:
+    image: your-eureka-server-image
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=default
   db:
     image: postgres
     container_name: postgres-photo-service

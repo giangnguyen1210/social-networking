@@ -10,15 +10,20 @@ import com.socialnetworking.postservice.repository.PostRepository;
 import com.socialnetworking.postservice.service.PostService;
 import com.socialnetworking.shared_service.dto.response.BaseResponse;
 import com.socialnetworking.shared_service.dto.response.FileData;
+import com.socialnetworking.shared_service.dto.response.PhotoResponse;
 import com.socialnetworking.shared_service.dto.response.PostResponse;
+import com.sun.istack.NotNull;
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -57,7 +62,6 @@ public class PostServiceImpl implements PostService {
             postResponse.setCreatedBy(post.getUserId());
             postResponse.setFiles(convertMultipartFiles(postRequest.getFiles()));
             String reply = postEventProducer.sendPost(postResponse);
-            System.out.println(reply);
             String cleanedReply = reply.replace("[", "").replace("]", "");
             List<String> fileInfoList = List.of(cleanedReply.split(", "));
             List<Photo> photos = new ArrayList<>();
@@ -73,6 +77,7 @@ public class PostServiceImpl implements PostService {
                     photo.setCreatedAt(LocalDateTime.now());
                     photo.setCreatedBy(post.getUserId());
                     photo.setIsDeleted(false);
+                    photo.setUserId(post.getUserId());
                     photos.add(photo);
                     photoRepository.save(photo);
                 } else {
@@ -131,6 +136,7 @@ public class PostServiceImpl implements PostService {
                         photo.setCreatedAt(LocalDateTime.now());
                         photo.setCreatedBy(post.getUserId());
                         photo.setIsDeleted(false);
+                        photo.setUserId(post.getUserId());
                         photos.add(photo);
                         photoRepository.save(photo);
                     } else {
@@ -201,6 +207,7 @@ public class PostServiceImpl implements PostService {
                         photo.setCreatedBy(postUpdate.getUserId());
                         photo.setUpdatedAt(LocalDateTime.now());
                         photo.setUpdatedBy(postUpdate.getUserId());
+                        photo.setUserId(postUpdate.getUserId());
                         photo.setIsDeleted(false);
                         photos.add(photo);
                         photoRepository.save(photo);
@@ -228,37 +235,129 @@ public class PostServiceImpl implements PostService {
         return baseResponse;
     }
 
-    /* get post by post id */
-    @Override
-    public BaseResponse getPostByPostId(Long id) {
-        BaseResponse baseResponse = new BaseResponse();
-        Post post = postRepository.getPostByIdAndIsDeletedFalse(id);
-        if(post==null){
-            baseResponse.setErrorCode(HttpStatus.NOT_FOUND.name());
-            baseResponse.setErrorDesc("No record found");
-        }else{
-            baseResponse.setData(post);
-            baseResponse.setErrorCode(HttpStatus.OK.name());
-            baseResponse.setErrorDesc("Success to get post"+ id);
-        }
-        return baseResponse;
-    }
+
 
     @Override
     public BaseResponse getPostsByUserId(Long userId) {
         BaseResponse baseResponse = new BaseResponse();
-
-        List<Post> post = postRepository.getPostsByUserIdAndIsDeletedFalseAndIsDraftFalse(userId);
-        if(post==null){
-            baseResponse.setErrorCode(HttpStatus.NOT_FOUND.name());
-            baseResponse.setErrorDesc("No record found");
-        }else{
-            baseResponse.setData(post);
-            baseResponse.setErrorCode(HttpStatus.OK.name());
-            baseResponse.setErrorDesc("Success to get all post by user id: "+ userId);
-            baseResponse.setTotalRecords(post.size());
+        if (userId == null) {
+            baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
+            baseResponse.setErrorDesc("Id không được để trống");
+            return baseResponse;
+        } else {
+            try {
+                List<PostResponse> postResponses = getPostsInfo(userId);
+                baseResponse.setData(postResponses);
+                baseResponse.setErrorCode(HttpStatus.OK.name());
+                baseResponse.setErrorDesc("Lấy danh sách bài đăng thành công");
+                baseResponse.setTotalRecords(postResponses.size());
+            } catch (IOException e) {
+                baseResponse.setErrorCode(HttpStatus.INTERNAL_SERVER_ERROR.name());
+                baseResponse.setErrorDesc("Lỗi khi lấy thông tin bài đăng");
+            }
         }
         return baseResponse;
+    }
+    private List<PostResponse> getPostsInfo(Long userId) throws IOException {
+        List<Post> posts = postRepository.findByUserIdAndIsDeletedFalseAndIsDraftFalseOrderByCreatedAtDesc(userId);
+        List<PostResponse> postResponses = new ArrayList<>();
+
+        for (Post post : posts) {
+            List<Photo> photos = photoRepository.findByPostIdAndIsDeletedFalse(post.getId());
+            List<PhotoResponse> photoResponses = new ArrayList<>();
+
+            for (Photo photo : photos) {
+                PhotoResponse photoResponse = new PhotoResponse(); // Tạo một đối tượng mới ở đây
+                String imageUrl = photo.getImageUrl();
+                byte[] fileContent = FileUtils.readFileToByteArray(new File(imageUrl));
+                String encodedString = Base64.getEncoder().encodeToString(fileContent);
+                photoResponse.setDataFile(encodedString);
+                photoResponse.setPostId(photo.getPostId());
+                photoResponse.setUpdatedAt(photo.getUpdatedAt());
+                photoResponse.setUserId(photo.getUserId());
+                photoResponse.setCreatedAt(photo.getCreatedAt());
+                photoResponse.setId(photo.getId());
+                photoResponses.add(photoResponse);
+            }
+
+            PostResponse postResponse = getPostResponse(photoResponses, post);
+            postResponses.add(postResponse);
+        }
+
+        return postResponses;
+    }
+
+    /* get post by post id */
+    @Override
+    public BaseResponse getPostByPostId(Long id) throws IOException {
+
+        BaseResponse baseResponse = new BaseResponse();
+        if(id==null){
+            baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
+            baseResponse.setErrorDesc("Id không được để trống");
+            return baseResponse;
+        }else{
+            PostResponse postResponses = getPostInfo(id);
+            if(postResponses!=null){
+                baseResponse.setData(postResponses);
+                baseResponse.setErrorCode(HttpStatus.OK.name());
+                baseResponse.setErrorDesc("Lấy bài đăng thành công");
+            }else{
+                baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
+                baseResponse.setErrorDesc("Không tìm thấy bài đăng");
+            }
+
+        }
+        return baseResponse;
+
+
+    }
+
+    private PostResponse getPostInfo(Long postId) throws IOException {
+        Post post = postRepository.getPostByIdAndIsDeletedFalse(postId);
+        PostResponse postResponse = new PostResponse();
+        if (post != null) {
+            List<Photo> photos = photoRepository.findByPostIdAndIsDeletedFalse(post.getId());
+            List<PhotoResponse> photoResponses = new ArrayList<>();
+
+            for (Photo photo : photos) {
+                PhotoResponse photoResponse = new PhotoResponse(); // Tạo mới đối tượng trong mỗi vòng lặp
+
+                String imageUrl = photo.getImageUrl();
+                byte[] fileContent = FileUtils.readFileToByteArray(new File(imageUrl));
+                String encodedString = Base64.getEncoder().encodeToString(fileContent);
+
+                photoResponse.setDataFile(encodedString);
+                photoResponse.setPostId(photo.getPostId());
+                photoResponse.setUpdatedAt(photo.getUpdatedAt());
+                photoResponse.setUserId(photo.getUserId());
+                photoResponse.setCreatedAt(photo.getCreatedAt());
+                photoResponse.setId(photo.getId());
+
+                photoResponses.add(photoResponse);
+            }
+
+            postResponse = getPostResponse(photoResponses, post);
+        } else {
+            return null;
+        }
+
+        return postResponse;
+    }
+
+
+    @NotNull
+    private static PostResponse getPostResponse(List<PhotoResponse> photoResponses, Post post) {
+        PostResponse postResponse = new PostResponse();
+        postResponse.setPostId(post.getId());
+        postResponse.setFilePost(photoResponses);
+        postResponse.setId(post.getId());
+        postResponse.setTitle(post.getTitle());
+        postResponse.setCreatedAt(post.getCreatedAt());
+        postResponse.setUpdatedAt(post.getUpdatedAt());
+        postResponse.setUserId(post.getUserId());
+        postResponse.setTotalRecords(photoResponses.size());
+        return postResponse;
     }
     /* get post save draft by user id */
     @Override
@@ -311,6 +410,65 @@ public class PostServiceImpl implements PostService {
         }
         return baseResponse;
     }
+
+//    @RabbitListener(queues ="${rabbitmq.post_following_queue.name}")
+//    public void receiveMessage(List<Long> followingIds) {
+//        BaseResponse response = getPostsByFollowingIds(followingIds);
+//        // Xử lý response nếu cần
+//    }
+//
+//    public BaseResponse getPostsByFollowingIds(List<Long> followingIds) {
+//        BaseResponse baseResponse = new BaseResponse();
+//        if (followingIds == null || followingIds.isEmpty()) {
+//            baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
+//            baseResponse.setErrorDesc("Danh sách followingId không được để trống");
+//            return baseResponse;
+//        } else {
+//            try {
+//                List<PostResponse> postResponses = getPostsInfoByFollowingIds(followingIds);
+//                baseResponse.setData(postResponses);
+//                baseResponse.setErrorCode(HttpStatus.OK.name());
+//                baseResponse.setErrorDesc("Lấy danh sách bài đăng thành công");
+//                baseResponse.setTotalRecords(postResponses.size());
+//            } catch (IOException e) {
+//                baseResponse.setErrorCode(HttpStatus.INTERNAL_SERVER_ERROR.name());
+//                baseResponse.setErrorDesc("Lỗi khi lấy thông tin bài đăng");
+//            }
+//        }
+//        return baseResponse;
+//    }
+//
+//    private List<PostResponse> getPostsInfoByFollowingIds(List<Long> followingIds) throws IOException {
+//        List<Post> posts = postRepository.findByUserIdInAndIsDeletedFalseAndIsDraftFalseOrderByCreatedAtDesc(followingIds);
+//        List<PostResponse> postResponses = new ArrayList<>();
+//
+//        for (Post post : posts) {
+//            List<Photo> photos = photoRepository.findByPostIdAndIsDeletedFalse(post.getId());
+//            List<PhotoResponse> photoResponses = new ArrayList<>();
+//
+//            for (Photo photo : photos) {
+//                PhotoResponse photoResponse = new PhotoResponse();
+//                String imageUrl = photo.getImageUrl();
+//                byte[] fileContent = FileUtils.readFileToByteArray(new File(imageUrl));
+//                String encodedString = Base64.getEncoder().encodeToString(fileContent);
+//                photoResponse.setDataFile(encodedString);
+//                photoResponse.setPostId(photo.getPostId());
+//                photoResponse.setUpdatedAt(photo.getUpdatedAt());
+//                photoResponse.setUserId(photo.getUserId());
+//                photoResponse.setCreatedAt(photo.getCreatedAt());
+//                photoResponse.setId(photo.getId());
+//                photoResponses.add(photoResponse);
+//            }
+//
+//            PostResponse postResponse = getPostResponse(photoResponses, post);
+//            postResponses.add(postResponse);
+//        }
+//
+//        return postResponses;
+//    }
+
+
+
     /* convert file for upload image */
     private List<FileData> convertMultipartFiles(List<MultipartFile> files) {
         return files.stream()

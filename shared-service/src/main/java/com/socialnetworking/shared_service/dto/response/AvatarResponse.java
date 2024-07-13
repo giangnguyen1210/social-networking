@@ -15,4 +15,5 @@ public class AvatarResponse extends AuditModel {
     private Long userId;
     private String mimeType;
     private FileData file;
+    private String dataFile;
 }

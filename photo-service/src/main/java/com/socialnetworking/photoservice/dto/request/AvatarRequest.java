@@ -8,9 +8,6 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PhotoRequest {
-    private Long userId;
-    private Long postId;
-//    private Binary image;
-
+public class AvatarRequest {
+    private Long id;
 }

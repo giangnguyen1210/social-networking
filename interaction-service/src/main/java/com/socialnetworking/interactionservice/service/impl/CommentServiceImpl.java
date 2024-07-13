@@ -133,6 +133,21 @@ public class CommentServiceImpl implements CommentService {
             baseResponse.setData(comments);
             baseResponse.setErrorCode(HttpStatus.OK.name());
             baseResponse.setErrorDesc("Success to get post"+ postId);
+            baseResponse.setTotalRecords(comments.size());
+        }
+        return baseResponse;
+    }
+    @Override
+    public BaseResponse getCommentsById(Long id) {
+        BaseResponse baseResponse = new BaseResponse();
+        Comment comment = repository.getCommentByIdAndIsDeletedFalse(id);
+        if(comment==null){
+            baseResponse.setErrorCode(HttpStatus.NOT_FOUND.name());
+            baseResponse.setErrorDesc("No record found");
+        }else{
+            baseResponse.setData(comment);
+            baseResponse.setErrorCode(HttpStatus.OK.name());
+            baseResponse.setErrorDesc("Success to get comment"+ id);
         }
         return baseResponse;
     }
@@ -148,6 +163,7 @@ public class CommentServiceImpl implements CommentService {
             baseResponse.setData(comments);
             baseResponse.setErrorCode(HttpStatus.OK.name());
             baseResponse.setErrorDesc("Success to get post"+ commentId);
+            baseResponse.setTotalRecords(comments.size());
         }
         return baseResponse;
     }

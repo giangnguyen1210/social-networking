@@ -13,6 +13,8 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     Optional<Comment> findByIdAndIsDeletedFalse(Long id);
     List<Comment> getCommentsByPostIdAndIsDeletedFalse(Long postId);
+
+
     List<Comment> findByParentIdAndIsDeletedFalse(Long parentId); // Phương thức mới để lấy các replies của một comment
 
     Comment getCommentByIdAndIsDeletedFalse(Long commentId);

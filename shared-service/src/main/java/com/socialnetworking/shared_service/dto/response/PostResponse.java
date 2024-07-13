@@ -18,4 +18,6 @@ public class PostResponse extends AuditModel {
     private Long postId;
     private Long userId;
     private List<FileData> files;
+    private List<PhotoResponse> filePost;
+    private int totalRecords;
 }

@@ -23,7 +23,4 @@ public class Post extends AuditModel {
     @OneToMany(mappedBy = "postId", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Photo> photos = new ArrayList<>();
 
-
-
-    // Constructors, Getters, Setters
 }

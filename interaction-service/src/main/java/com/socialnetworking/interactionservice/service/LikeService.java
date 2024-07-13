@@ -9,7 +9,7 @@ public interface LikeService {
 
     Boolean isPostLikedByUser(Long postId, Long userId);
 
-    BaseResponse getLikeByPostId(LikeRequest likeRequest);
-
+//    BaseResponse getLikeByPostId(LikeRequest likeRequest);
+BaseResponse getLikeByPostId(Long postId);
     BaseResponse getLikeByUserId(LikeRequest likeRequest);
 }

@@ -6,7 +6,6 @@ import com.socialnetworking.userservice.model.Role;
 import com.socialnetworking.userservice.model.UserStatus;
 import lombok.Data;
 
-import javax.persistence.Column;
 import java.util.Date;
 
 @Data
@@ -16,6 +15,7 @@ public class RegisterRequest extends AuditModel {
     private String password;
     private String email;
     private String name;
+    private String phoneNumber;
     private Gender gender;
     private Date birthday;
     private Role role;

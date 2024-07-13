@@ -1,15 +1,14 @@
 package com.socialnetworking.userservice.service.impl;
+
 import com.socialnetworking.shared_service.dto.response.BaseResponse;
 import com.socialnetworking.userservice.config.JwtService;
 import com.socialnetworking.userservice.dto.request.LoginRequest;
-import com.socialnetworking.userservice.dto.request.OTPVerificationRequest;
 import com.socialnetworking.userservice.dto.request.RegisterRequest;
 import com.socialnetworking.userservice.dto.request.UserRequest;
 import com.socialnetworking.userservice.dto.response.AuthResponse;
 import com.socialnetworking.userservice.model.OTP;
 import com.socialnetworking.userservice.model.Role;
 import com.socialnetworking.userservice.model.User;
-import com.socialnetworking.userservice.model.UserStatus;
 import com.socialnetworking.userservice.repository.OTPRepository;
 import com.socialnetworking.userservice.repository.RoleRepository;
 import com.socialnetworking.userservice.repository.UserRepository;
@@ -64,7 +63,6 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse login(LoginRequest request) {
         AuthResponse authResponse = new AuthResponse("");
-        UserStatus inactiveStatus = userStatusRepository.findById(3L).orElse(null);
         if(request.getUsername()==null || request.getUsername().isEmpty()){
             authResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
             authResponse.setErrorDesc("Bạn cần phải nhập email hoặc username để đăng nhập");
@@ -74,8 +72,7 @@ public class AuthServiceImpl implements AuthService {
             authResponse.setErrorDesc("Mật khẩu không được rỗng");
             return authResponse;
         }
-        User user = userRepository.findUserByUsername(request.getUsername());
-        System.out.println(user);
+        User user = userRepository.findUserByUsernameAndIsDeletedFalse(request.getUsername());
 
         if(user==null){
             authResponse.setErrorCode(HttpStatus.NOT_FOUND.name());
@@ -85,16 +82,11 @@ public class AuthServiceImpl implements AuthService {
                 Authentication authentication = authenticationManager.authenticate(
                         new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
                 );
-                if(user.getStatus()==inactiveStatus){
-                    authResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
-                    authResponse.setErrorDesc("Tài khoản chưa được active, bạn cần phải active bằng cách nhập OTP");
-                }else {
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                    authResponse.setErrorCode(HttpStatus.OK.name());
-                    String token = jwtGenerator.generateToken(request.getUsername());
-                    authResponse.setAccessToken(token);
-                    authResponse.setTokenType("Bearer "+token);
-                }
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                authResponse.setErrorCode(HttpStatus.OK.name());
+                String token = jwtGenerator.generateToken(request.getUsername(), user.getId());
+                authResponse.setAccessToken(token);
+                authResponse.setTokenType("Bearer "+token);
 
             } else {
                 authResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
@@ -105,16 +97,15 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public String generateToken(String username) {
-        return jwtGenerator.generateToken(username);
+    public String generateToken(String username, Long id) {
+        return jwtGenerator.generateToken(username,id);
     }
     @Override
     public BaseResponse register(RegisterRequest request) {
         User user = new User();
         BaseResponse baseResponse = new BaseResponse();
-        User accountUsername = userRepository.findUserByUsername(request.getUsername());
+        User accountUsername = userRepository.findUserByUsernameAndIsDeletedFalse(request.getUsername());
         User accountEmail = userRepository.findByEmail(request.getEmail());
-        UserStatus inactiveStatus = userStatusRepository.findById(3L).orElse(null);
         Role roleUser = roleRepository.findById(2L).orElse(null);
 
         if(request.getUsername()==null || request.getUsername().isEmpty()){
@@ -127,7 +118,7 @@ public class AuthServiceImpl implements AuthService {
             return baseResponse;
         }else if(request.getPassword()==null || request.getPassword()==""){
             baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
-            baseResponse.setErrorDesc("Mật khẩu tên không được rỗng");
+            baseResponse.setErrorDesc("Mật khẩu không được rỗng");
             return baseResponse;
         }
         if(accountUsername!=null){
@@ -153,7 +144,6 @@ public class AuthServiceImpl implements AuthService {
             user.setUsername(request.getUsername());
             Date date = new Date();
             user.setCreatedDate(date);
-            user.setStatus(inactiveStatus);
             user.setRole(roleUser);
             user.setName(request.getName());
             user.setBirthday(request.getBirthday());
@@ -166,47 +156,47 @@ public class AuthServiceImpl implements AuthService {
         }
         return baseResponse;
     }
-    @Override
-    public BaseResponse sendEmailOTP(RegisterRequest request) throws NoSuchAlgorithmException {
-        BaseResponse baseResponse = new BaseResponse();
-        // check email exist:
-        User checkEmailExist = userRepository.findByEmail(request.getEmail());
-        if(checkEmailExist==null){
-            baseResponse.setErrorCode(HttpStatus.NOT_FOUND.name());
-            baseResponse.setErrorDesc("Email không tồn tại");
-            return baseResponse;
-        }else{
-            String otp = generateOTP();
-            LocalDateTime expiryTime = LocalDateTime.now().plusSeconds(30); // Thời gian hết hạn: 30 giây
-            long currentCounter = System.currentTimeMillis() / 30000;
-            OTP otpEntity = new OTP();
-            otpEntity.setOtp(otp);
-            otpEntity.setExpiryTime(expiryTime);
-            otpEntity.setEmail(checkEmailExist.getEmail());
-            otpEntity.setCounter(currentCounter);
-
-            otpRepository.save(otpEntity);
-            System.out.println(otp);
-            sendEmail(request.getEmail(), "OTP ", "Your OTP is: " + otp + " will expire in "+30+ "s");
-            baseResponse.setErrorCode(HttpStatus.OK.name());
-            baseResponse.setData("Gửi email thành công!, mời bạn nhập mã OTP");
-            return baseResponse;
-        }
-    }
-    @Override
-    public BaseResponse verifyEmail(OTPVerificationRequest request) {
-        BaseResponse baseResponse = new BaseResponse();
-        UserStatus activeStatus = userStatusRepository.findById(1L).orElse(null);
-        if(validateOtp(request.getOtp(), request.getEmail())){
-            userRepository.updateUserStatusByEmail(request.getEmail(), activeStatus);
-            baseResponse.setErrorCode(HttpStatus.OK.name());
-            baseResponse.setErrorDesc("Tài khoản của bạn đã active");
-            return baseResponse;
-        }
-        baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
-        baseResponse.setErrorDesc("OTP đã hết hạn");
-        return baseResponse;
-    }
+//    @Override
+//    public BaseResponse sendEmailOTP(RegisterRequest request) throws NoSuchAlgorithmException {
+//        BaseResponse baseResponse = new BaseResponse();
+//        // check email exist:
+//        User checkEmailExist = userRepository.findByEmail(request.getEmail());
+//        if(checkEmailExist==null){
+//            baseResponse.setErrorCode(HttpStatus.NOT_FOUND.name());
+//            baseResponse.setErrorDesc("Email không tồn tại");
+//            return baseResponse;
+//        }else{
+//            String otp = generateOTP();
+//            LocalDateTime expiryTime = LocalDateTime.now().plusSeconds(30); // Thời gian hết hạn: 30 giây
+//            long currentCounter = System.currentTimeMillis() / 30000;
+//            OTP otpEntity = new OTP();
+//            otpEntity.setOtp(otp);
+//            otpEntity.setExpiryTime(expiryTime);
+//            otpEntity.setEmail(checkEmailExist.getEmail());
+//            otpEntity.setCounter(currentCounter);
+//
+//            otpRepository.save(otpEntity);
+//            System.out.println(otp);
+//            sendEmail(request.getEmail(), "OTP ", "Your OTP is: " + otp + " will expire in "+30+ "s");
+//            baseResponse.setErrorCode(HttpStatus.OK.name());
+//            baseResponse.setData("Gửi email thành công!, mời bạn nhập mã OTP");
+//            return baseResponse;
+//        }
+//    }
+//    @Override
+//    public BaseResponse verifyEmail(OTPVerificationRequest request) {
+//        BaseResponse baseResponse = new BaseResponse();
+//        UserStatus activeStatus = userStatusRepository.findById(1L).orElse(null);
+//        if(validateOtp(request.getOtp(), request.getEmail())){
+//            userRepository.updateUserStatusByEmail(request.getEmail(), activeStatus);
+//            baseResponse.setErrorCode(HttpStatus.OK.name());
+//            baseResponse.setErrorDesc("Tài khoản của bạn đã active");
+//            return baseResponse;
+//        }
+//        baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
+//        baseResponse.setErrorDesc("OTP đã hết hạn");
+//        return baseResponse;
+//    }
 
     @Override
     public BaseResponse resetPassword(UserRequest request) {

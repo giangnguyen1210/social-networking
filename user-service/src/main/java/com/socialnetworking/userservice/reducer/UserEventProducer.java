@@ -17,15 +17,27 @@ public class UserEventProducer {
     @Value("${rabbitmq.routing.key}")
     private String routingKey;
 
+    @Value("${rabbitmq.post_following_exchange.name}")
+    private String postFollowingExchange;
+
+    @Value("${rabbitmq.post_following_routing.key}")
+    private String postFollowingRoutingKey;
+
     private static final Logger LOGGER = LoggerFactory.getLogger(UserEventProducer.class);
 
 
     @Autowired
     private RabbitTemplate rabbitTemplate;
-    public String sendPost(AvatarResponse postResponse) {
-        LOGGER.info(String.format("Sending message -> %s", postResponse));
-        return (String) rabbitTemplate.convertSendAndReceive(exchange, routingKey, postResponse);
+    public String sendAvatar(AvatarResponse avatarResponse) {
+        LOGGER.info(String.format("Sending message -> %s", avatarResponse));
+        return (String) rabbitTemplate.convertSendAndReceive(exchange, routingKey, avatarResponse);
     }
+
+//    public String sendFollowing(UserResponse UserResponse) {
+//        LOGGER.info(String.format("Sending message -> %s", UserResponse));
+//        return (String) rabbitTemplate.convertSendAndReceive(postFollowingExchange, postFollowingRoutingKey, UserResponse);
+//    }
+
 
 
 }

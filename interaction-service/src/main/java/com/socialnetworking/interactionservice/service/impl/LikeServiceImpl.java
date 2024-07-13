@@ -2,9 +2,11 @@ package com.socialnetworking.interactionservice.service.impl;
 
 import com.socialnetworking.interactionservice.dto.request.LikeRequest;
 import com.socialnetworking.interactionservice.model.Like;
+import com.socialnetworking.interactionservice.producer.LikeEventProducer;
 import com.socialnetworking.interactionservice.repository.LikeRepository;
 import com.socialnetworking.interactionservice.service.LikeService;
 import com.socialnetworking.shared_service.dto.response.BaseResponse;
+import com.socialnetworking.shared_service.dto.response.LikeResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,9 @@ import java.util.List;
 public class LikeServiceImpl implements LikeService {
     @Autowired
     private LikeRepository likeRepository;
+
+    @Autowired
+    private LikeEventProducer likeEventProducer;
 
     @Override
     public BaseResponse createLike(LikeRequest likeRequest) {
@@ -33,8 +38,13 @@ public class LikeServiceImpl implements LikeService {
             like.setCreatedAt(LocalDateTime.now());
             like.setCreatedBy(likeRequest.getUserId());
             likeRepository.save(like);
+            LikeResponse likeResponse = new LikeResponse();
+            likeResponse.setUserId(like.getUserId());
+            likeResponse.setPostId(like.getPostId());
+            likeEventProducer.sendLike(likeResponse);
             baseResponse.setData(like);
             baseResponse.setErrorCode(HttpStatus.CREATED.name());
+            baseResponse.setErrorDesc("like thành công");
         }else{
             baseResponse.setErrorCode(HttpStatus.NOT_FOUND.name());
             baseResponse.setErrorDesc("No record found");
@@ -70,9 +80,9 @@ public class LikeServiceImpl implements LikeService {
     }
 
     @Override
-    public BaseResponse getLikeByPostId(LikeRequest likeRequest) {
+    public BaseResponse getLikeByPostId(Long postId) {
         BaseResponse baseResponse = new BaseResponse();
-        Long postId = likeRequest.getPostId();
+//        Long postId = likeRequest.getPostId();
         if(postId!=null) {
             List<Like> likes = likeRepository.findLikesByPostId(postId);
             if (likes.size()==0) {
