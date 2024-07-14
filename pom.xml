@@ -15,6 +15,7 @@
 		<module>shared-service</module>
 		<module>interaction-service</module>
 		<module>follower-service</module>
+		<module>chat-message</module>
 	</modules>
 	<build>
 		<plugins>

@@ -7,6 +7,8 @@ import com.social_networking.follower_service.repository.FollowerRepository;
 import com.social_networking.follower_service.service.FollowerService;
 import com.socialnetworking.shared_service.dto.response.BaseResponse;
 import com.socialnetworking.shared_service.dto.response.FollowerResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,8 @@ public class FollowerServiceImpl implements FollowerService {
 
     @Autowired
     private FollowerReducer followerReducer;
+    private static final Logger LOGGER = LoggerFactory.getLogger(FollowerServiceImpl.class);
+
 
     @Override
     public BaseResponse saveFollow(FollowerRequest request) {
@@ -89,5 +93,7 @@ public class FollowerServiceImpl implements FollowerService {
         }
         return baseResponse;
     }
+
+
 
 }

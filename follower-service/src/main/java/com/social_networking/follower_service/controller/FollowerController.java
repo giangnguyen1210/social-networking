@@ -24,4 +24,5 @@ public class FollowerController {
     public ResponseEntity<?> unFollow(@RequestBody FollowerRequest request){
         return new ResponseEntity<>(followerService.unFollow(request), HttpStatus.OK);
     }
+
 }

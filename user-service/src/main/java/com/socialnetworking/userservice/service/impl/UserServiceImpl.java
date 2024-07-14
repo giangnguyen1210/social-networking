@@ -13,7 +13,6 @@ import com.socialnetworking.userservice.model.Gender;
 import com.socialnetworking.userservice.model.User;
 import com.socialnetworking.userservice.reducer.UserEventProducer;
 import com.socialnetworking.userservice.repository.AvatarRepository;
-import com.socialnetworking.userservice.repository.FollowerRepository;
 import com.socialnetworking.userservice.repository.GenderRepository;
 import com.socialnetworking.userservice.repository.UserRepository;
 import com.socialnetworking.userservice.service.UserService;
@@ -45,8 +44,6 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private UserEventProducer userEventProducer;
 
-    @Autowired
-    private FollowerRepository followerRepository;
     private static final Logger LOGGER = LoggerFactory.getLogger(UserServiceImpl.class);
 
 
@@ -76,7 +73,7 @@ public class UserServiceImpl implements UserService {
             if(request.getBirthday()!=null){
                 user.setBirthday(request.getBirthday());
             }
-            Integer genderId = request.getGenderId();
+            Long genderId = request.getGenderId();
             if (genderId != null) {
                 Gender gender = genderRepository.findById(genderId).orElse(null);
                 user.setGender(gender);
@@ -98,6 +95,17 @@ public class UserServiceImpl implements UserService {
             // Xử lý trường hợp không tìm thấy người dùng
         }
 
+        return baseResponse;
+    }
+
+    @Override
+    public BaseResponse listGender(){
+        BaseResponse baseResponse = new BaseResponse();
+        List<Gender> genders = genderRepository.findAll();
+        baseResponse.setData(genders);
+        baseResponse.setErrorDesc("Lấy thành công danh sách giới tính");
+        baseResponse.setErrorCode(HttpStatus.OK.name());
+        baseResponse.setTotalRecords(genders.size());
         return baseResponse;
     }
 
@@ -202,14 +210,14 @@ public class UserServiceImpl implements UserService {
         return baseResponse;
     }
 
-    @Override
-    public BaseResponse getAllUsersFollowing(Long id) {
+
+    public BaseResponse getAllUsersFollowing(Long id, String keyword) {
         BaseResponse baseResponse = new BaseResponse();
-        if(id==null){
+        if (id == null) {
             baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
-            baseResponse.setErrorCode("Id không được để trống");
-        }else{
-            List<User> followings = userRepository.findUsersFollowedByUserId(id);
+            baseResponse.setErrorDesc("Id không được để trống");
+        } else {
+            List<User> followings = userRepository.findUsersFollowedByUserIdAndUsernameOrNameContaining(id, keyword);
             List<UserResponse> userResponses = new ArrayList<>();
 
             for (User user : followings) {
@@ -230,20 +238,36 @@ public class UserServiceImpl implements UserService {
             baseResponse.setErrorCode(HttpStatus.OK.name());
             baseResponse.setErrorDesc("Lấy danh sách người dùng following thành công");
             baseResponse.setTotalRecords(userResponses.size());
-
         }
         return baseResponse;
     }
 
+    public BaseResponse searchUsersByKeyword(Long userId, String keyword) throws IOException {
+        BaseResponse baseResponse = new BaseResponse();
 
+        List<User> users = userRepository.findUsersByKeyword(keyword);
+        List<UserResponse> userResponses = new ArrayList<>();
+        for (User user : users) {
+            UserResponse userResponse = getUserInfo(user.getUsername());
+            boolean isFollowing = checkFollowing(userId, user.getId());
+            userResponse.setFollowing(isFollowing);
+            userResponses.add(userResponse);
+        }
+
+        baseResponse.setData(userResponses);
+        baseResponse.setErrorCode(HttpStatus.OK.name());
+        baseResponse.setErrorDesc("Lấy danh sách người dùng thành công");
+        baseResponse.setTotalRecords(userResponses.size());
+        return baseResponse;
+    }
     @Override
-    public BaseResponse getAllUsersFollower(Long id) {
+    public BaseResponse getAllUsersFollower(Long id, String keyword) {
         BaseResponse baseResponse = new BaseResponse();
         if(id==null){
             baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
             baseResponse.setErrorCode("Id không được để trống");
         }else{
-            List<User> followers = userRepository.findUsersFollowersOfUserId(id);
+            List<User> followers = userRepository.findUsersFollowersOfUserIdAndUsernameOrNameContaining(id, keyword);
             List<UserResponse> userResponses = new ArrayList<>();
             for (User user : followers) {
                 try {
@@ -265,7 +289,6 @@ public class UserServiceImpl implements UserService {
         }
         return baseResponse;
     }
-
 
 
     @Override

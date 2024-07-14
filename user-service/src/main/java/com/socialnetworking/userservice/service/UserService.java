@@ -13,12 +13,12 @@ public interface UserService {
     BaseResponse updateInfo(UserEditRequest request);
     BaseResponse updateAvatar(UserEditAvatar request);
     BaseResponse getUsersNotFollowing(Long id);
-    BaseResponse getAllUsersFollowing(Long id);
+    BaseResponse getAllUsersFollowing(Long id, String keyword);
+    BaseResponse searchUsersByKeyword(Long id, String keyword) throws IOException;
 
-    BaseResponse getAllUsersFollower(Long id);
+    BaseResponse getAllUsersFollower(Long id, String keyword);
 
     BaseResponse getAllUser();
-
     BaseResponse checkIsFollowing(FollowerRequest followerRequest);
 
 
@@ -26,6 +26,7 @@ public interface UserService {
     BaseResponse getUserInfoById(Long id) throws IOException;
 
     BaseResponse getAvatar(UserRequest user);
+    BaseResponse listGender();
 
 
 }

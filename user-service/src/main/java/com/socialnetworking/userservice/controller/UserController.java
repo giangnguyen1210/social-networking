@@ -60,13 +60,23 @@ public class UserController {
     }
 
     @GetMapping("/get-users-following/{id}")
-    public ResponseEntity<?> getAllUsersFollowing(@PathVariable Long id){
-        return new ResponseEntity<>(userService.getAllUsersFollowing(id), HttpStatus.OK);
+    public ResponseEntity<?> getAllUsersFollowing(@PathVariable Long id, @RequestParam("keyword") String keyword){
+        return new ResponseEntity<>(userService.getAllUsersFollowing(id, keyword), HttpStatus.OK);
     }
 
+    @GetMapping("/search-users/{userId}")
+    public ResponseEntity<?> searchUsers(@PathVariable("userId") Long userId,@RequestParam("keyword") String keyword) throws IOException {
+        return new ResponseEntity<>(userService.searchUsersByKeyword(userId,keyword), HttpStatus.OK);
+    }
+//    @GetMapping("/search-username/{username}")
+//    public ResponseEntity<?> searchUserByUsername(@PathVariable String username){
+//        return new ResponseEntity<>(userService.searchUserByUsername(username), HttpStatus.OK);
+//    }
+
+
     @GetMapping("/get-users-follower/{id}")
-    public ResponseEntity<?> getAllUsersFollower(@PathVariable Long id){
-        return new ResponseEntity<>(userService.getAllUsersFollower(id), HttpStatus.OK);
+    public ResponseEntity<?> getAllUsersFollower(@PathVariable Long id, @RequestParam("keyword") String keyword){
+        return new ResponseEntity<>(userService.getAllUsersFollower(id, keyword), HttpStatus.OK);
     }
 
 //    @GetMapping("/check-is-following")
@@ -80,5 +90,9 @@ public class UserController {
         return new ResponseEntity<>(userService.checkIsFollowing(followerRequest), HttpStatus.OK);
     }
 
+    @GetMapping("/list-gender")
+    public ResponseEntity<?> listGender(){
+        return new ResponseEntity<>(userService.listGender(), HttpStatus.OK);
+    }
 
 }
