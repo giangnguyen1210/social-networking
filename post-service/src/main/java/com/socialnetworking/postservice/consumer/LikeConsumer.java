@@ -14,7 +14,7 @@ public class LikeConsumer {
     @Autowired
     private LikeRepository likeRepository;
     @RabbitListener(queues = "${rabbitmq.like_queue.name}")
-    public void handleCommentMessage(LikeResponse likeResponse) {
+    public void handleLikeMessage(LikeResponse likeResponse) {
         LOGGER.info("Received message: {}", likeResponse);
         Long postId = likeResponse.getPostId();
         Long userId= likeResponse.getUserId();

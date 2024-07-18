@@ -41,7 +41,6 @@ public class PostController {
     public ResponseEntity<?> createPostSaveDraft(@RequestParam(value = "files", required = false) List<MultipartFile> files,
                                                 @RequestParam(value = "userId") Long userId,
                                                 @RequestParam(value = "title", required = false) String title){
-
         PostRequest postRequest = new PostRequest();
         if(files!=null){
             for (MultipartFile file : files) {
