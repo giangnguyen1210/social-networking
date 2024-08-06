@@ -8,13 +8,9 @@ import com.socialnetworking.userservice.dto.request.UserEditAvatar;
 import com.socialnetworking.userservice.dto.request.UserEditRequest;
 import com.socialnetworking.userservice.dto.request.UserRequest;
 import com.socialnetworking.userservice.dto.response.UserResponse;
-import com.socialnetworking.userservice.model.Avatar;
-import com.socialnetworking.userservice.model.Gender;
-import com.socialnetworking.userservice.model.User;
+import com.socialnetworking.userservice.model.*;
 import com.socialnetworking.userservice.reducer.UserEventProducer;
-import com.socialnetworking.userservice.repository.AvatarRepository;
-import com.socialnetworking.userservice.repository.GenderRepository;
-import com.socialnetworking.userservice.repository.UserRepository;
+import com.socialnetworking.userservice.repository.*;
 import com.socialnetworking.userservice.service.UserService;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
@@ -43,6 +39,12 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private UserEventProducer userEventProducer;
+
+    @Autowired
+    private SearchHistoryRepository searchHistoryRepository;
+
+    @Autowired
+    private ClickHistoryRepository clickHistoryRepository;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UserServiceImpl.class);
 
@@ -244,6 +246,12 @@ public class UserServiceImpl implements UserService {
 
     public BaseResponse searchUsersByKeyword(Long userId, String keyword) throws IOException {
         BaseResponse baseResponse = new BaseResponse();
+        // Lưu thông tin lịch sử tìm kiếm
+//        SearchHistory searchHistory = new SearchHistory();
+//        searchHistory.setUserId(userId);
+//        searchHistory.setKeyword(keyword);
+//        searchHistory.setSearchTime(LocalDateTime.now());
+//        searchHistoryRepository.save(searchHistory);
 
         List<User> users = userRepository.findUsersByKeyword(keyword);
         List<UserResponse> userResponses = new ArrayList<>();
@@ -253,6 +261,7 @@ public class UserServiceImpl implements UserService {
             userResponse.setFollowing(isFollowing);
             userResponses.add(userResponse);
         }
+        LOGGER.info(userResponses.toString());
 
         baseResponse.setData(userResponses);
         baseResponse.setErrorCode(HttpStatus.OK.name());
@@ -260,6 +269,48 @@ public class UserServiceImpl implements UserService {
         baseResponse.setTotalRecords(userResponses.size());
         return baseResponse;
     }
+
+    @Override
+    public BaseResponse recordClick(Long userId, Long clickedUserId) {
+        // Lưu thông tin lịch sử click
+        BaseResponse baseResponse = new BaseResponse();
+
+        // Kiểm tra nếu lịch sử click đã tồn tại
+        boolean exists = clickHistoryRepository.existsByUserIdAndClickedUserId(userId, clickedUserId);
+
+        if (!exists) {
+            ClickHistory clickHistory = new ClickHistory();
+            clickHistory.setUserId(userId);
+            clickHistory.setClickedUserId(clickedUserId);
+            clickHistory.setClickTime(LocalDateTime.now());
+            clickHistoryRepository.save(clickHistory);
+
+            baseResponse.setData(clickHistory);
+            baseResponse.setErrorCode(HttpStatus.OK.name());
+            baseResponse.setErrorDesc("Lưu lịch sử tìm kiếm thành công");
+        }
+        return baseResponse;
+    }
+
+    @Override
+    public BaseResponse historySearch(Long userId) {
+        BaseResponse baseResponse = new BaseResponse();
+        List<ClickHistory> histories = clickHistoryRepository.findByUserId(userId);
+        baseResponse.setData(histories);
+        baseResponse.setErrorCode(HttpStatus.OK.name());
+        baseResponse.setErrorDesc("Lấy lịch sử search thành công");
+        return baseResponse;
+    }
+
+    public BaseResponse findUsersFromHistory(Long userId) {
+        BaseResponse baseResponse = new BaseResponse();
+        List<User> users = clickHistoryRepository.findUsersByUserIdInClickHistory(userId);
+        baseResponse.setData(users);
+        baseResponse.setErrorCode(HttpStatus.OK.name());
+        baseResponse.setErrorDesc("Lấy danh sách người dùng từ lịch sử search thành công");
+        return baseResponse;
+    }
+
     @Override
     public BaseResponse getAllUsersFollower(Long id, String keyword) {
         BaseResponse baseResponse = new BaseResponse();

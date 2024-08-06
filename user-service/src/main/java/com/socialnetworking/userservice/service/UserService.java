@@ -16,6 +16,11 @@ public interface UserService {
     BaseResponse getAllUsersFollowing(Long id, String keyword);
     BaseResponse searchUsersByKeyword(Long id, String keyword) throws IOException;
 
+    BaseResponse recordClick(Long userId, Long clickedUserId);
+
+    BaseResponse historySearch(Long userId);
+    BaseResponse findUsersFromHistory(Long userId);
+
     BaseResponse getAllUsersFollower(Long id, String keyword);
 
     BaseResponse getAllUser();

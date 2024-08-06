@@ -14,6 +14,8 @@ import com.socialnetworking.shared_service.dto.response.PhotoResponse;
 import com.socialnetworking.shared_service.dto.response.PostResponse;
 import com.sun.istack.NotNull;
 import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -37,6 +39,7 @@ public class PostServiceImpl implements PostService {
     @Autowired
     private PhotoRepository photoRepository;
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(PostServiceImpl.class);
 
     @Autowired
     private PostEventProducer postEventProducer;
@@ -147,7 +150,7 @@ public class PostServiceImpl implements PostService {
                 post.setHasPhoto(false);
             }
             post = postRepository.save(post);
-
+            LOGGER.info(String.valueOf(post.getId()));
             baseResponse.setErrorCode(HttpStatus.OK.name());
             baseResponse.setData(post);
         }

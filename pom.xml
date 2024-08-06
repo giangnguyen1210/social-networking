@@ -17,6 +17,13 @@
 		<module>follower-service</module>
 		<module>chat-message</module>
 	</modules>
+	<dependencies>
+		<dependency>
+			<groupId>com.github.alexdlaird</groupId>
+			<artifactId>java-ngrok</artifactId>
+			<version>1.6.2</version>
+		</dependency>
+	</dependencies>
 	<build>
 		<plugins>
 			<plugin>

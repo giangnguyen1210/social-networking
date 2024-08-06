@@ -68,6 +68,22 @@ public class UserController {
     public ResponseEntity<?> searchUsers(@PathVariable("userId") Long userId,@RequestParam("keyword") String keyword) throws IOException {
         return new ResponseEntity<>(userService.searchUsersByKeyword(userId,keyword), HttpStatus.OK);
     }
+
+    @PostMapping("/search-users/history")
+    public ResponseEntity<?> recordClick(@RequestParam Long userId, @RequestParam Long clickedUserId) {
+        return new ResponseEntity<>(userService.recordClick(userId, clickedUserId), HttpStatus.OK);
+    }
+
+    @GetMapping("/search-users/history/{userId}")
+    public ResponseEntity<?> historySearch(@PathVariable("userId") Long userId) {
+        return new ResponseEntity<>(userService.historySearch(userId), HttpStatus.OK);
+    }
+
+    @GetMapping("/search-users/users-from-history/{userId}")
+    public ResponseEntity<?> getUsersFromHistory(@PathVariable("userId") Long userId) {
+        return new ResponseEntity<>(userService.findUsersFromHistory(userId), HttpStatus.OK);
+
+    }
 //    @GetMapping("/search-username/{username}")
 //    public ResponseEntity<?> searchUserByUsername(@PathVariable String username){
 //        return new ResponseEntity<>(userService.searchUserByUsername(username), HttpStatus.OK);
