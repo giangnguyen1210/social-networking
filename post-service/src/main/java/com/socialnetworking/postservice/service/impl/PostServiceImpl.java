@@ -278,6 +278,7 @@ public class PostServiceImpl implements PostService {
                 photoResponse.setUserId(photo.getUserId());
                 photoResponse.setCreatedAt(photo.getCreatedAt());
                 photoResponse.setId(photo.getId());
+                photoResponse.setMimeType(photo.getMimeType());
                 photoResponses.add(photoResponse);
             }
 

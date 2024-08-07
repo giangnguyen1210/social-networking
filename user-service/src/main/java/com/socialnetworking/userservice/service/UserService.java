@@ -34,4 +34,5 @@ public interface UserService {
     BaseResponse listGender();
 
 
+    BaseResponse deleteSearchHistory(Long userId);
 }

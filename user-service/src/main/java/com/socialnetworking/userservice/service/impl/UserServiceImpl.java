@@ -111,6 +111,17 @@ public class UserServiceImpl implements UserService {
         return baseResponse;
     }
 
+    @Override
+    public BaseResponse deleteSearchHistory(Long userId) {
+        BaseResponse baseResponse = new BaseResponse();
+        clickHistoryRepository.deleteByUserId(userId);
+        baseResponse.setData(null);
+        baseResponse.setErrorDesc("Xóa lịch sử tìm kiếm thành công");
+        baseResponse.setErrorCode(HttpStatus.OK.name());
+        baseResponse.setTotalRecords(0);
+        return baseResponse;
+    }
+
 
     @Override
     public BaseResponse updateAvatar(UserEditAvatar request) {
@@ -305,9 +316,24 @@ public class UserServiceImpl implements UserService {
     public BaseResponse findUsersFromHistory(Long userId) {
         BaseResponse baseResponse = new BaseResponse();
         List<User> users = clickHistoryRepository.findUsersByUserIdInClickHistory(userId);
-        baseResponse.setData(users);
+        List<UserResponse> userResponses = new ArrayList<>();
+
+        for (User user : users) {
+            try {
+                UserResponse userResponse = getUserInfo(user.getUsername());
+                userResponses.add(userResponse);
+            } catch (IOException e) {
+                // Handle exception
+                baseResponse.setErrorCode(HttpStatus.INTERNAL_SERVER_ERROR.name());
+                baseResponse.setErrorDesc("Error fetching user info for user: " + user.getUsername());
+                return baseResponse;
+            }
+        }
+
+        baseResponse.setData(userResponses);
         baseResponse.setErrorCode(HttpStatus.OK.name());
-        baseResponse.setErrorDesc("Lấy danh sách người dùng từ lịch sử search thành công");
+        baseResponse.setErrorDesc("Lấy danh sách lịch sử search thành công");
+        baseResponse.setTotalRecords(userResponses.size());
         return baseResponse;
     }
 

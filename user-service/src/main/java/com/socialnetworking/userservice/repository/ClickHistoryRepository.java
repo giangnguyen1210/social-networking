@@ -5,6 +5,7 @@ import com.socialnetworking.userservice.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import javax.transaction.Transactional;
 import java.util.List;
 
 public interface ClickHistoryRepository extends JpaRepository<ClickHistory, Long> {
@@ -12,5 +13,8 @@ public interface ClickHistoryRepository extends JpaRepository<ClickHistory, Long
     boolean existsByUserIdAndClickedUserId(Long userId, Long clickedUserId);
     @Query("SELECT u FROM User u WHERE u.id IN (SELECT ch.clickedUserId FROM ClickHistory ch WHERE ch.userId = :userId)")
     List<User> findUsersByUserIdInClickHistory(Long userId);
+
+    @Transactional
+    void deleteByUserId(Long userId);
 }
 
