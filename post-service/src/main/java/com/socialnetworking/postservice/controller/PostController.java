@@ -6,18 +6,25 @@ import com.socialnetworking.postservice.service.PostService;
 import com.socialnetworking.postservice.util.FileUtil;
 import com.socialnetworking.shared_service.dto.response.BaseResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 @RestController
 @RequestMapping("/api/posts")
 public class PostController {
     @Autowired
     private PostService postService;
+    private final Path rootLocation = Paths.get("uploads/posts");
+
     @PostMapping( "/create")
     public ResponseEntity<?> createPost(@RequestParam(value = "files", required = false) List<MultipartFile> files,
                                         @RequestParam(value = "userId") Long userId,
@@ -62,6 +69,24 @@ public class PostController {
     @GetMapping("/get-posts-by-user-id/{id}")
     public ResponseEntity<?> getPostByUserId(@PathVariable("id") Long userId) {
         return new ResponseEntity<>(postService.getPostsByUserId(userId), HttpStatus.OK);
+    }
+
+    @GetMapping("/{filename:.+}")
+    public ResponseEntity<Resource> serveFile(@PathVariable String filename) {
+        try {
+            Path file = rootLocation.resolve(filename);
+            Resource resource = new UrlResource(file.toUri());
+
+            if (resource.exists() || resource.isReadable()) {
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
+                        .body(resource);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 //    @GetMapping("/get-posts-by-follower/{id}")
 //    public ResponseEntity<?> getPostByFollower(@PathVariable("id") Long followingId){

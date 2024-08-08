@@ -1,6 +1,7 @@
 package com.socialnetworking.userservice.dto.response;
 
 import com.socialnetworking.shared_service.dto.response.AvatarResponse;
+import com.socialnetworking.userservice.model.Gender;
 import lombok.Data;
 
 import java.util.Date;
@@ -17,6 +18,7 @@ public class UserResponse {
     private String password;
     private AvatarResponse avatarData;
     private String bio;
+    private Gender gender;
     private Date createdDate;
     private Date updatedDate;
     private boolean isFollowing;

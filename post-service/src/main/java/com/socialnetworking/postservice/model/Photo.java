@@ -18,6 +18,7 @@ public class Photo extends AuditModel {
     private Long id;
     private String imageUrl;
     private String mimeType;
+    private String fileName;
     private Long postId;
     private Long userId;
     private Boolean isDeleted;

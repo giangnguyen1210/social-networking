@@ -16,5 +16,8 @@ public interface ClickHistoryRepository extends JpaRepository<ClickHistory, Long
 
     @Transactional
     void deleteByUserId(Long userId);
+
+    @Transactional
+    void deleteByUserIdAndClickedUserId(Long userId, Long clickedUserId);
 }
 

@@ -35,4 +35,5 @@ public interface UserService {
 
 
     BaseResponse deleteSearchHistory(Long userId);
+    BaseResponse deleteSearchHistoryClickId(Long userId, Long clickId);
 }

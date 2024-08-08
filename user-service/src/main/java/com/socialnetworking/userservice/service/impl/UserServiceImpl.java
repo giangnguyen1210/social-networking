@@ -49,57 +49,90 @@ public class UserServiceImpl implements UserService {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserServiceImpl.class);
 
 
+//    @Override
+//    public BaseResponse updateInfo(UserEditRequest request) {
+//        BaseResponse baseResponse = new BaseResponse();
+//        LOGGER.info(String.valueOf(request));
+//        Optional<User> optionalUser = userRepository.findUserByUserId(request.getUserId());
+//        User accountUsername = userRepository.findUserByUsernameAndIsDeletedFalse(request.getUsername());
+//        if(optionalUser.isPresent()) {
+//            User user = optionalUser.get();
+//            if(accountUsername!=null){
+//                if(Objects.equals(accountUsername.getUsername(), request.getUsername()) && !Objects.equals(accountUsername.getUserId(), request.getUserId())){
+//                    baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
+//                    baseResponse.setErrorDesc("Tên người dùng đã tồn tại");
+//                    return baseResponse;
+//                }
+//            }
+//            if(request.getUsername()!=null){
+//                user.setUsername(request.getUsername());
+//            }
+//            if(request.getBio()!=null){
+//                user.setBio(request.getBio());
+//            }
+//            if(request.getName()!=null){
+//                user.setName(request.getName());
+//            }
+//            if(request.getBirthday()!=null){
+//                user.setBirthday(request.getBirthday());
+//            }
+//            Long genderId = request.getGenderId();
+//            if (genderId != null) {
+//                Gender gender = genderRepository.findById(genderId).orElse(null);
+//                user.setGender(gender);
+//            }
+//            LOGGER.info(String.valueOf(user));
+//
+//            // Lưu thông tin người dùng đã cập nhật vào cơ sở dữ liệu
+//            userRepository.save(user);
+//
+//            baseResponse.setData(user); // Chắc chắn rằng bạn đang trả về user1, không phải user
+//            baseResponse.setErrorCode(HttpStatus.OK.name());
+//        } else {
+//            // Xử lý trường hợp không tìm thấy người dùng
+//        }
+//
+//        return baseResponse;
+//    }
+
     @Override
     public BaseResponse updateInfo(UserEditRequest request) {
         BaseResponse baseResponse = new BaseResponse();
-        Optional<User> optionalUser = userRepository.findUserByUserId(request.getUserId());
+        LOGGER.info(String.valueOf(request));
+
         User accountUsername = userRepository.findUserByUsernameAndIsDeletedFalse(request.getUsername());
-        if(optionalUser.isPresent()) {
-            User user = optionalUser.get();
-            if(accountUsername!=null){
-                if(Objects.equals(accountUsername.getUsername(), request.getUsername()) && !Objects.equals(accountUsername.getUserId(), request.getUserId())){
-                    baseResponse.setErrorCode(HttpStatus.BAD_REQUEST.name());
-                    baseResponse.setErrorDesc("Tên người dùng đã tồn tại");
-                    return baseResponse;
-                }
+
+        if (accountUsername!=null) {
+            if (request.getBio() != null) {
+                accountUsername.setBio(request.getBio());
             }
-            if(request.getUsername()!=null){
-                user.setUsername(request.getUsername());
+            if (request.getName() != null) {
+                accountUsername.setName(request.getName());
             }
-            if(request.getBio()!=null){
-                user.setBio(request.getBio());
+            if (request.getBirthday() != null) {
+                accountUsername.setBirthday(request.getBirthday());
             }
-            if(request.getName()!=null){
-                user.setName(request.getName());
-            }
-            if(request.getBirthday()!=null){
-                user.setBirthday(request.getBirthday());
-            }
+
             Long genderId = request.getGenderId();
             if (genderId != null) {
                 Gender gender = genderRepository.findById(genderId).orElse(null);
-                user.setGender(gender);
+                accountUsername.setGender(gender);
             }
 
-//            MultipartFile avatarFile = request.getAvatar();
-//            if (avatarFile != null && !avatarFile.isEmpty()) {
-//                String fileName = avatarFile.getOriginalFilename();
-//                String avatarUrl = "/avatars/" + fileName; // Đường dẫn tạm thời
-//                user.setAvatarUrl(avatarUrl);
-//            }
+            LOGGER.info(String.valueOf(accountUsername));
 
-            // Lưu thông tin người dùng đã cập nhật vào cơ sở dữ liệu
-            userRepository.save(user);
+            // Save the updated user information to the database
+            userRepository.save(accountUsername);
 
-            baseResponse.setData(user); // Chắc chắn rằng bạn đang trả về user1, không phải user
+            baseResponse.setData(accountUsername);
             baseResponse.setErrorCode(HttpStatus.OK.name());
         } else {
-            // Xử lý trường hợp không tìm thấy người dùng
+            baseResponse.setErrorCode(HttpStatus.NOT_FOUND.name());
+            baseResponse.setErrorDesc("Người dùng không tồn tại");
         }
 
         return baseResponse;
     }
-
     @Override
     public BaseResponse listGender(){
         BaseResponse baseResponse = new BaseResponse();
@@ -115,6 +148,17 @@ public class UserServiceImpl implements UserService {
     public BaseResponse deleteSearchHistory(Long userId) {
         BaseResponse baseResponse = new BaseResponse();
         clickHistoryRepository.deleteByUserId(userId);
+        baseResponse.setData(null);
+        baseResponse.setErrorDesc("Xóa lịch sử tìm kiếm thành công");
+        baseResponse.setErrorCode(HttpStatus.OK.name());
+        baseResponse.setTotalRecords(0);
+        return baseResponse;
+    }
+
+    @Override
+    public BaseResponse deleteSearchHistoryClickId(Long userId, Long clickedId) {
+        BaseResponse baseResponse = new BaseResponse();
+        clickHistoryRepository.deleteByUserIdAndClickedUserId(userId, clickedId);
         baseResponse.setData(null);
         baseResponse.setErrorDesc("Xóa lịch sử tìm kiếm thành công");
         baseResponse.setErrorCode(HttpStatus.OK.name());
@@ -513,6 +557,7 @@ public class UserServiceImpl implements UserService {
         userResponse.setBio(user.getBio());
         userResponse.setName(user.getName());
         userResponse.setUsername(user.getUsername());
+        userResponse.setGender(user.getGender());
         userResponse.setPhoneNumber(user.getPhoneNumber());
         userResponse.setCreatedDate(user.getCreatedDate());
         userResponse.setUpdatedDate(user.getUpdatedDate());

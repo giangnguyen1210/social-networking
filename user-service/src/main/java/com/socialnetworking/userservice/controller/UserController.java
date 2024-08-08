@@ -73,6 +73,11 @@ public class UserController {
     public ResponseEntity<?> deleteSearchHistory(@PathVariable("userId") Long userId){
         return new ResponseEntity<>(userService.deleteSearchHistory(userId), HttpStatus.OK);
     }
+
+    @DeleteMapping("/search-users/delete-history/{userId}/{clickedUserId}")
+    public ResponseEntity<?> deleteSearchHistoryClickedUser(@PathVariable("userId") Long userId,@PathVariable("clickedUserId") Long clickedUserId){
+        return new ResponseEntity<>(userService.deleteSearchHistoryClickId(userId, clickedUserId), HttpStatus.OK);
+    }
     @PostMapping("/search-users/history")
     public ResponseEntity<?> recordClick(@RequestParam Long userId, @RequestParam Long clickedUserId) {
         return new ResponseEntity<>(userService.recordClick(userId, clickedUserId), HttpStatus.OK);
