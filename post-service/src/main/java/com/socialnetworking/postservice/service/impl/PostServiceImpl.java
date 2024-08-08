@@ -13,7 +13,6 @@ import com.socialnetworking.shared_service.dto.response.FileData;
 import com.socialnetworking.shared_service.dto.response.PhotoResponse;
 import com.socialnetworking.shared_service.dto.response.PostResponse;
 import com.sun.istack.NotNull;
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,11 +20,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,6 +41,8 @@ public class PostServiceImpl implements PostService {
 
     @Autowired
     private PostEventProducer postEventProducer;
+
+    private final String baseUrl = "http://localhost:8081/api/posts/";
     /* Create post */
     public BaseResponse createPost(PostRequest postRequest){
         Post post = new Post();
@@ -71,10 +71,12 @@ public class PostServiceImpl implements PostService {
                 if (parts.length == 2) {
                     String imageUrl = parts[0];
                     String mimeType = parts[1];
+                    String fileName = imageUrl.replace("uploads/posts/", "");
                     Photo photo = new Photo();
                     photo.setPostId(post.getId());
                     photo.setImageUrl(imageUrl);
                     photo.setMimeType(mimeType);
+                    photo.setFileName(fileName);
                     photo.setCreatedAt(LocalDateTime.now());
                     photo.setCreatedBy(post.getUserId());
                     photo.setIsDeleted(false);
@@ -130,10 +132,12 @@ public class PostServiceImpl implements PostService {
                     if (parts.length == 2) {
                         String imageUrl = parts[0];
                         String mimeType = parts[1];
+                        String fileName = imageUrl.replace("uploads/posts", "");
                         Photo photo = new Photo();
                         photo.setPostId(post.getId());
                         photo.setImageUrl(imageUrl);
                         photo.setMimeType(mimeType);
+                        photo.setFileName(fileName);
                         photo.setCreatedAt(LocalDateTime.now());
                         photo.setCreatedBy(post.getUserId());
                         photo.setIsDeleted(false);
@@ -259,8 +263,40 @@ public class PostServiceImpl implements PostService {
         }
         return baseResponse;
     }
-    private List<PostResponse> getPostsInfo(Long userId) throws IOException {
-        List<Post> posts = postRepository.findByUserIdAndIsDeletedFalseAndIsDraftFalseOrderByCreatedAtDesc(userId);
+//    private List<PostResponse> getPostsInfo(Long userId) throws IOException {
+//        LocalDateTime dateThreshold = LocalDateTime.now().minus(2, ChronoUnit.DAYS);
+//        List<Post> posts = postRepository.findByUserIdAndIsDeletedFalseAndIsDraftFalseAndCreatedAtWithinTwoDays(userId ,dateThreshold);
+//        List<PostResponse> postResponses = new ArrayList<>();
+//
+//        for (Post post : posts) {
+//            List<Photo> photos = photoRepository.findByPostIdAndIsDeletedFalse(post.getId());
+//            List<PhotoResponse> photoResponses = new ArrayList<>();
+//
+//            for (Photo photo : photos) {
+//                PhotoResponse photoResponse = new PhotoResponse(); // Tạo một đối tượng mới ở đây
+//                String imageUrl = photo.getImageUrl();
+//                byte[] fileContent = FileUtils.readFileToByteArray(new File(imageUrl));
+//                String encodedString = Base64.getEncoder().encodeToString(fileContent);
+//                photoResponse.setDataFile(encodedString);
+//                photoResponse.setPostId(photo.getPostId());
+//                photoResponse.setUpdatedAt(photo.getUpdatedAt());
+//                photoResponse.setUserId(photo.getUserId());
+//                photoResponse.setCreatedAt(photo.getCreatedAt());
+//                photoResponse.setId(photo.getId());
+//                photoResponse.setMimeType(photo.getMimeType());
+//                photoResponses.add(photoResponse);
+//            }
+//
+//            PostResponse postResponse = getPostResponse(photoResponses, post);
+//            postResponses.add(postResponse);
+//        }
+//
+//        return postResponses;
+//    }
+
+    public List<PostResponse> getPostsInfo(Long userId) throws IOException {
+        LocalDateTime dateThreshold = LocalDateTime.now().minus(2, ChronoUnit.DAYS);
+        List<Post> posts = postRepository.findByUserIdAndIsDeletedFalseAndIsDraftFalseAndCreatedAtWithinTwoDays(userId, dateThreshold);
         List<PostResponse> postResponses = new ArrayList<>();
 
         for (Post post : posts) {
@@ -269,10 +305,10 @@ public class PostServiceImpl implements PostService {
 
             for (Photo photo : photos) {
                 PhotoResponse photoResponse = new PhotoResponse(); // Tạo một đối tượng mới ở đây
-                String imageUrl = photo.getImageUrl();
-                byte[] fileContent = FileUtils.readFileToByteArray(new File(imageUrl));
-                String encodedString = Base64.getEncoder().encodeToString(fileContent);
-                photoResponse.setDataFile(encodedString);
+                String name = photo.getFileName();
+                // Tạo URL đầy đủ từ đường dẫn tương đối
+                String fullImageUrl = baseUrl + name;
+                photoResponse.setDataFile(fullImageUrl); // Trả về URL đầy đủ
                 photoResponse.setPostId(photo.getPostId());
                 photoResponse.setUpdatedAt(photo.getUpdatedAt());
                 photoResponse.setUserId(photo.getUserId());
@@ -324,12 +360,11 @@ public class PostServiceImpl implements PostService {
 
             for (Photo photo : photos) {
                 PhotoResponse photoResponse = new PhotoResponse(); // Tạo mới đối tượng trong mỗi vòng lặp
-
-                String imageUrl = photo.getImageUrl();
-                byte[] fileContent = FileUtils.readFileToByteArray(new File(imageUrl));
-                String encodedString = Base64.getEncoder().encodeToString(fileContent);
-
-                photoResponse.setDataFile(encodedString);
+                String name = photo.getFileName();
+                // Tạo URL đầy đủ từ đường dẫn tương đối
+                String fullImageUrl = baseUrl + name;
+                photoResponse.setDataFile(fullImageUrl);
+                photoResponse.setMimeType(photo.getMimeType());
                 photoResponse.setPostId(photo.getPostId());
                 photoResponse.setUpdatedAt(photo.getUpdatedAt());
                 photoResponse.setUserId(photo.getUserId());
